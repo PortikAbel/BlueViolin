@@ -1,28 +1,45 @@
 package Client;
 
-import javafx.application.Application;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.layout.StackPane;
-import javafx.stage.Stage;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
 
-public class ClientMain extends Application {
+public class ClientMain {
+    private final Socket clientSocket;
+    private final BufferedReader serverToClientReader;
+    private final PrintWriter clientToServerWriter;
 
-    @Override
-    public void start(Stage stage) throws Exception {
-        stage.setTitle("BlueViolin");
+    public ClientMain(String hostname, int portNumber) throws IOException {
+        clientSocket = new Socket(hostname, portNumber);
+        serverToClientReader = new BufferedReader(
+                new InputStreamReader(
+                        clientSocket.getInputStream()
+                )
+        );
+        clientToServerWriter = new PrintWriter(
+                clientSocket.getOutputStream(), true
+        );
+    }
 
-        StackPane layout = new StackPane();
-        Scene scene = new Scene(layout, 450, 600);
+    public void send(String msg){
+        clientToServerWriter.write(msg);
+    }
 
-        Button btnStart = new Button("START");
-        layout.getChildren().add(btnStart);
-
-        stage.setScene(scene);
-        stage.show();
+    public void stop() {
+        try {
+            clientSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args){
-        launch(args);
+        try {
+            new ClientMain("localhost", 4242);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
