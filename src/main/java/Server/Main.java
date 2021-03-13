@@ -6,11 +6,11 @@ import org.json.simple.parser.ParseException;
 
 import java.io.*;
 
-class main {
+public class Main {
 
     public static void main(String[] args) throws IOException, ParseException {
         JSONParser parser = new JSONParser();
-        FileReader file = new FileReader("C:\\Users\\erdei\\Documents\\Egyetem\\NegyedikFelev\\AB2\\miniABKR\\src\\main\\resources\\database.json");
+        FileReader file = new FileReader(".\\src\\main\\database.json");
 
         Object obj = parser.parse(file);
 
