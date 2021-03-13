@@ -32,7 +32,7 @@ public class MainWindow implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        /*try {
+        try {
             clientSocket = new Socket("Localhost", 4242);
             serverToClientReader = new BufferedReader(
                     new InputStreamReader(
@@ -44,7 +44,10 @@ public class MainWindow implements Initializable {
             );
         } catch (Exception e) {
             e.printStackTrace();
-        }*/
+        }
+
+        treeView = new TreeView<>();
+        treeView.setRoot(root);
 
         root = new TreeItem<>("databases");
         root.setExpanded(true);
@@ -62,13 +65,11 @@ public class MainWindow implements Initializable {
             e.printStackTrace();
         }
 
-        treeView = new TreeView<>();
-        treeView.setRoot(root);/*
         treeView.setOnMouseClicked( e -> {
             if (e.getButton().equals(MouseButton.SECONDARY)) {
                 TreeItem<String> selectedItem = treeView.getSelectionModel().getSelectedItem();
             }
-        });*/
+        });
     }
 
     public void send(String msg){
