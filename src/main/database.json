@@ -1,0 +1,21 @@
+{
+  "name" : "Adatbazis",
+  "tables": [
+    {
+      "name": "tabla1",
+      "attributes": [
+        {
+          "name" : "Attrinutum1"
+        }
+      ]
+    },
+    {
+      "name": "tabla2",
+      "attributes": [
+        {
+          "name" : "Attrinutum2"
+        }
+      ]
+    }
+  ]
+}
