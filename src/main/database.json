@@ -5,7 +5,13 @@
       "name": "tabla1",
       "attributes": [
         {
-          "name" : "Attrinutum1"
+          "name" : "ID",
+          "pK" : true,
+          "fK" : false,
+          "fKReference": "-",
+          "notNULL": true,
+          "unique" : true
+
         }
       ]
     },
@@ -13,7 +19,12 @@
       "name": "tabla2",
       "attributes": [
         {
-          "name" : "Attrinutum2"
+          "name" : "ID",
+          "pK" : true,
+          "fK" : false,
+          "fKReference": "-",
+          "notNULL": true,
+          "unique" : true
         }
       ]
     }
