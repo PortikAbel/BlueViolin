@@ -7,26 +7,20 @@ import org.json.simple.parser.ParseException;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 
 public class Main {
 
     public static void main(String[] args) throws IOException, ParseException {
-        /*JSONParser parser = new JSONParser();
-        FileReader file = new FileReader(".\\src\\main\\database.json");
+        List<Database> databases = Json.buildDatabases();
 
-        Object obj = parser.parse(file);
+        System.out.println(databases.get(0).getName());
+        System.out.println(Json.nodeToString(databases.get(0)));
+        System.out.println(databases.get(0).getTables().get(0).getName());
+        System.out.println(databases.get(0).getTables().get(1).getName());
+        System.out.println(databases.get(0).getTables().get(0).getAttributes().get(0).getName());
 
-        JSONObject jsonObject = (JSONObject)obj;
-
-        Database database = new Database(jsonObject);
-
-        System.out.println(database.getName());
-        System.out.println(Json.nodeToString(database));
-        System.out.println(database.getTables().get(0).getName());
-        System.out.println(database.getTables().get(1).getName());
-        System.out.println(database.getTables().get(0).getAttributes().get(0).getName());*/
-
-        int portNumber = 4242;
+        /*int portNumber = 4242;
 
         try {
             ServerSocket serverSocket = new ServerSocket(portNumber);
@@ -47,7 +41,7 @@ public class Main {
 
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
 
     }
 }
