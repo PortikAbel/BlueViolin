@@ -11,7 +11,7 @@ public class Json {
 
     private static ObjectMapper getDefaultObjectMapper() {
         ObjectMapper defaultObjectMapper = new ObjectMapper();
-        defaultObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        //defaultObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         return defaultObjectMapper;
     }
 
@@ -27,9 +27,9 @@ public class Json {
         return objectMapper.valueToTree(obj);
     }
 
-    public static String nodeToString(JsonNode node) throws JsonProcessingException {
+    public static String nodeToString(Object obj) throws JsonProcessingException {
         ObjectWriter objectWriter = objectMapper.writer();
         objectWriter = objectWriter.with(SerializationFeature.INDENT_OUTPUT);
-        return objectWriter.writeValueAsString(node);
+        return objectWriter.writeValueAsString(obj);
     }
 }
