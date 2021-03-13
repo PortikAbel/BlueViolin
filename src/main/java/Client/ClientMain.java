@@ -28,6 +28,7 @@ public class ClientMain {
     }
 
     public void stop() {
+        clientToServerWriter.write("exit");
         try {
             clientSocket.close();
         } catch (IOException e) {
