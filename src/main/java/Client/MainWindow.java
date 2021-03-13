@@ -4,10 +4,16 @@ import Server.Database;
 import Server.Json;
 import Server.Table;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Scene;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.input.MouseButton;
+import javafx.scene.layout.AnchorPane;
+import javafx.stage.Stage;
 import org.json.simple.parser.ParseException;
 
 import java.io.BufferedReader;
@@ -46,9 +52,6 @@ public class MainWindow implements Initializable {
             e.printStackTrace();
         }
 
-        treeView = new TreeView<>();
-        treeView.setRoot(root);
-
         root = new TreeItem<>("databases");
         root.setExpanded(true);
 
@@ -56,18 +59,37 @@ public class MainWindow implements Initializable {
             List<Database> databases = Json.buildDatabases();
             for(Database database : databases) {
                 TreeItem<String> newDatabaseItem = new TreeItem<>(database.getName());
+                root.getChildren().add(newDatabaseItem);
                 for (Table table : database.getTables()) {
                     newDatabaseItem.getChildren().add(new TreeItem<>(table.getName()));
                 }
-                root.getChildren().add(newDatabaseItem);
             }
         } catch (IOException | ParseException e) {
             e.printStackTrace();
         }
+        treeView.setRoot(root);
 
-        treeView.setOnMouseClicked( e -> {
-            if (e.getButton().equals(MouseButton.SECONDARY)) {
+        treeView.setOnMouseClicked( mouseEvent -> {
+            if (mouseEvent.getButton().equals(MouseButton.SECONDARY)) {
+                ContextMenu options = new ContextMenu();
                 TreeItem<String> selectedItem = treeView.getSelectionModel().getSelectedItem();
+
+                if (selectedItem.getValue().equals("databases")) {
+                    MenuItem newDatabaseOption = new MenuItem("new database");
+                    newDatabaseOption.setOnAction( actionEvent -> {
+                        try {
+                            AnchorPane newDatabaseDialogue = FXMLLoader.load(getClass().getResource("NewDatabase.fxml"));
+                            Stage dialogueStage = new Stage();
+                            dialogueStage.setTitle("Create new database");
+                            dialogueStage.setScene(new Scene(newDatabaseDialogue));
+                            dialogueStage.show();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
+                    options.getItems().add(newDatabaseOption);
+                    treeView.setContextMenu(options);
+                }
             }
         });
     }
