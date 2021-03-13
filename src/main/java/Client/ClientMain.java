@@ -1,46 +1,22 @@
 package Client;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
 
-public class ClientMain {
-    private final Socket clientSocket;
-    private final BufferedReader serverToClientReader;
-    private final PrintWriter clientToServerWriter;
+public class ClientMain extends Application {
 
-    public ClientMain(String hostname, int portNumber) throws IOException {
-        clientSocket = new Socket(hostname, portNumber);
-        serverToClientReader = new BufferedReader(
-                new InputStreamReader(
-                        clientSocket.getInputStream()
-                )
-        );
-        clientToServerWriter = new PrintWriter(
-                clientSocket.getOutputStream(), true
-        );
-    }
-
-    public void send(String msg){
-        clientToServerWriter.write(msg);
-    }
-
-    public void stop() {
-        clientToServerWriter.write("exit");
-        try {
-            clientSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    @Override
+    public void start(Stage stage) throws Exception {
+        Parent root = FXMLLoader.load(getClass().getResource("MainWindow.fxml"));
+        stage.setTitle("BlueViolin");
+        stage.setScene(new Scene(root, 300, 275));
+        stage.show();
     }
 
     public static void main(String[] args){
-        try {
-            new ClientMain("localhost", 4242);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        launch(args);
     }
 }

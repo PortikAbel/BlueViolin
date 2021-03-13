@@ -20,7 +20,7 @@ public class Main {
         System.out.println(databases.get(0).getTables().get(1).getName());
         System.out.println(databases.get(0).getTables().get(0).getAttributes().get(0).getName());
 
-        /*int portNumber = 4242;
+        int portNumber = 4242;
 
         try {
             ServerSocket serverSocket = new ServerSocket(portNumber);
@@ -41,7 +41,7 @@ public class Main {
 
         } catch (IOException e) {
             e.printStackTrace();
-        }*/
+        }
 
     }
 }
