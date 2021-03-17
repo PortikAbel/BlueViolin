@@ -6,13 +6,12 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 
-
 <AnchorPane xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Client.NewDatabase">
    <children>
       <HBox>
          <children>
             <TextField fx:id="databaseNameTextField" promptText="new database name" />
-            <Button mnemonicParsing="false" text="CREATE" />
+            <Button mnemonicParsing="false" onAction="#create" text="CREATE" />
          </children>
          <padding>
             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
