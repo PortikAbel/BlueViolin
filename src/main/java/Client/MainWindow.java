@@ -96,6 +96,21 @@ public class MainWindow implements Initializable {
         treeView.getSelectionModel().getSelectedItem().getChildren().add(new TreeItem<>(name));
     }
 
+    private void deleteDatabase(TreeItem<String> database) {
+        System.out.println("DELETE DATABASE " + database.getValue());
+        database.getParent().getChildren().remove(database);
+    }
+
+    public void addTable(String name) {
+        System.out.println("CREATE TABLE " + name);
+        treeView.getSelectionModel().getSelectedItem().getChildren().add(new TreeItem<>(name));
+    }
+
+    private void deleteTable(TreeItem<String> table) {
+        System.out.println("DELETE TABLE " + table.getValue());
+        table.getParent().getChildren().remove(table);
+    }
+
     private class MouseEventHandler implements EventHandler<MouseEvent>
     {
         @Override
@@ -129,13 +144,23 @@ public class MainWindow implements Initializable {
                 //  delete database / new table
                 else if (selectedItem.getParent().getValue().equals("databases")) {
                     MenuItem deleteDatabaseOption = new MenuItem("delete database");
-                    deleteDatabaseOption.setOnAction( actionEvent -> {
-
-                    });
+                    deleteDatabaseOption.setOnAction( actionEvent -> deleteDatabase(selectedItem));
 
                     MenuItem newTableOption = new MenuItem("new table");
                     newTableOption.setOnAction( actionEvent -> {
-
+                        FXMLLoader loader = new FXMLLoader();
+                        loader.setLocation(getClass().getResource("NewTable.fxml"));
+                        try {
+                            AnchorPane newTableDialogue = loader.load();
+                            NewTable newTableController = loader.getController();
+                            newTableController.setMainWindow(MainWindow.this);
+                            Stage dialogueStage = new Stage();
+                            dialogueStage.setTitle("Create new table");
+                            dialogueStage.setScene(new Scene(newTableDialogue));
+                            dialogueStage.showAndWait();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     });
                     options.getItems().addAll(deleteDatabaseOption, newTableOption);
                     treeView.setContextMenu(options);
@@ -144,9 +169,7 @@ public class MainWindow implements Initializable {
                 // delete table
                 else {
                     MenuItem deleteTableOption = new MenuItem("delete table");
-                    deleteTableOption.setOnAction( actionEvent -> {
-
-                    });
+                    deleteTableOption.setOnAction( actionEvent -> deleteTable(selectedItem));
                     options.getItems().add(deleteTableOption);
                     treeView.setContextMenu(options);
                 }
