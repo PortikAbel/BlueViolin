@@ -4,22 +4,32 @@ import org.json.simple.JSONObject;
 
 public class Attribute {
     private String name;
-    private String fKReference;
+    private String refTable, refColumn;
     private boolean pK;
     private boolean fK;
-    private boolean notNUll;
+    private boolean notNull;
     private boolean unique;
-
 
     public Attribute(JSONObject o) {
 
         this.name = (String) o.get("name");
-        this.fKReference = (String) o.get("fKReference");
+        this.refTable = (String) o.get("refTable");
+        this.refColumn = (String) o.get("refColumn");
         this.pK = (boolean) o.get("pK");
         this.fK = (boolean) o.get("fK");
-        this.notNUll = (boolean) o.get("notNULL");
+        this.notNull = (boolean) o.get("notNULL");
         this.unique = (boolean) o.get("unique");
 
+    }
+
+    public Attribute(String name, String refTable, String refColumn, boolean pK, boolean fK, boolean notNull, boolean unique) {
+        this.name = name;
+        this.refTable = refTable;
+        this.refColumn = refColumn;
+        this.pK = pK;
+        this.fK = fK;
+        this.notNull = notNull;
+        this.unique = unique;
     }
 
     public String getName() {
@@ -30,39 +40,47 @@ public class Attribute {
         this.name = name;
     }
 
-    public String getfKReference() {
-        return fKReference;
+    public String getRefTable() {
+        return refTable;
     }
 
-    public void setfKReference(String fKReference) {
-        this.fKReference = fKReference;
+    public void setRefTable(String refTable) {
+        this.refTable = refTable;
     }
 
-    public boolean ispK() {
+    public String getRefColumn() {
+        return refColumn;
+    }
+
+    public void setRefColumn(String refColumn) {
+        this.refColumn = refColumn;
+    }
+
+    public boolean getPK() {
         return pK;
     }
 
-    public void setpK(boolean pK) {
+    public void setPK(boolean pK) {
         this.pK = pK;
     }
 
-    public boolean isfK() {
+    public boolean getFK() {
         return fK;
     }
 
-    public void setfK(boolean fK) {
+    public void setFK(boolean fK) {
         this.fK = fK;
     }
 
-    public boolean isNotNUll() {
-        return notNUll;
+    public boolean getNotNull() {
+        return notNull;
     }
 
-    public void setNotNUll(boolean notNUll) {
-        this.notNUll = notNUll;
+    public void setNotNull(boolean notNull) {
+        this.notNull = notNull;
     }
 
-    public boolean isUnique() {
+    public boolean getUnique() {
         return unique;
     }
 

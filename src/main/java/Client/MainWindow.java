@@ -1,8 +1,10 @@
 package Client;
 
+import Server.Attribute;
 import Server.Database;
 import Server.Json;
 import Server.Table;
+import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -101,7 +103,7 @@ public class MainWindow implements Initializable {
         database.getParent().getChildren().remove(database);
     }
 
-    public void addTable(String name) {
+    public void addTable(String name, ObservableList<Attribute> attributes) {
         System.out.println("CREATE TABLE " + name);
         treeView.getSelectionModel().getSelectedItem().getChildren().add(new TreeItem<>(name));
     }

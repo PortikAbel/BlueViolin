@@ -8,7 +8,8 @@
           "name" : "ID",
           "pK" : true,
           "fK" : false,
-          "fKReference": "-",
+          "refTable": "",
+          "refColumn": "",
           "notNULL": true,
           "unique" : true
 
@@ -22,7 +23,8 @@
           "name" : "ID",
           "pK" : true,
           "fK" : false,
-          "fKReference": "-",
+          "refTable": "",
+          "refColumn": "",
           "notNULL": true,
           "unique" : true
         }
