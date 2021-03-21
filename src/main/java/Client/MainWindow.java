@@ -17,6 +17,7 @@ import javafx.scene.control.TreeView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import org.json.simple.parser.ParseException;
 
@@ -39,6 +40,8 @@ public class MainWindow implements Initializable {
 
     @FXML
     private TreeView<String> treeView;
+    @FXML
+    private BorderPane borderPane;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -156,10 +159,13 @@ public class MainWindow implements Initializable {
                             AnchorPane newTableDialogue = loader.load();
                             NewTable newTableController = loader.getController();
                             newTableController.setMainWindow(MainWindow.this);
+                            borderPane.setCenter(newTableDialogue);
+                            /*
                             Stage dialogueStage = new Stage();
                             dialogueStage.setTitle("Create new table");
                             dialogueStage.setScene(new Scene(newTableDialogue));
                             dialogueStage.showAndWait();
+                            */
                         } catch (IOException e) {
                             e.printStackTrace();
                         }

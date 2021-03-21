@@ -1,19 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.DialogPane?>
 <?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 
-<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Client.MainWindow">
+<AnchorPane prefHeight="700.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Client.MainWindow">
    <children>
-      <BorderPane prefHeight="400.0" prefWidth="600.0">
+      <BorderPane fx:id="borderPane">
          <left>
-            <TreeView fx:id="treeView" prefHeight="400.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+            <TreeView fx:id="treeView" prefHeight="700.0" prefWidth="250.0" BorderPane.alignment="CENTER" />
          </left>
-         <center>
-            <DialogPane BorderPane.alignment="CENTER" />
-         </center>
       </BorderPane>
    </children>
 </AnchorPane>
