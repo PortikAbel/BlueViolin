@@ -32,11 +32,8 @@ import java.util.ResourceBundle;
 import java.util.stream.Stream;
 
 public class MainWindow implements Initializable {
-    private Socket clientSocket;
     private BufferedReader serverToClientReader;
     private PrintWriter clientToServerWriter;
-
-    private TreeItem<String> root;
 
     @FXML
     private TreeView<String> treeView;
@@ -47,7 +44,7 @@ public class MainWindow implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         // initializing socket connections with server
         try {
-            clientSocket = new Socket("Localhost", 4242);
+            Socket clientSocket = new Socket("Localhost", 4242);
             serverToClientReader = new BufferedReader(
                     new InputStreamReader(
                             clientSocket.getInputStream()
@@ -61,7 +58,7 @@ public class MainWindow implements Initializable {
         }
 
         // building the tree view of databases & tables
-        root = new TreeItem<>("databases");
+        TreeItem<String> root = new TreeItem<>("databases");
         root.setExpanded(true);
 
         try {
