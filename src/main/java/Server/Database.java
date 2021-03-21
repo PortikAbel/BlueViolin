@@ -20,6 +20,12 @@ public class Database {
             tables.add(currentTable);
         }
     }
+
+    public Database(String name) {
+        this.name = name;
+        tables = tables = new ArrayList<>();
+    }
+
     public String getName() {
         return name;
     }
@@ -30,6 +36,14 @@ public class Database {
 
     public List<Table> getTables() {
         return tables;
+    }
+
+    public void addTable (Table newtable){
+        tables.add(newtable);
+    };
+
+    public void removeTable(Table table){
+        tables.remove(table);
     }
 
 

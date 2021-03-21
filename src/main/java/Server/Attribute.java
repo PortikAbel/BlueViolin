@@ -56,23 +56,23 @@ public class Attribute {
         this.refColumn = refColumn;
     }
 
-    public boolean getPK() {
+    public boolean ispK() {
         return pK;
     }
 
-    public void setPK(boolean pK) {
+    public void setpK(boolean pK) {
         this.pK = pK;
     }
 
-    public boolean getFK() {
+    public boolean isfK() {
         return fK;
     }
 
-    public void setFK(boolean fK) {
+    public void setfK(boolean fK) {
         this.fK = fK;
     }
 
-    public boolean getNotNull() {
+    public boolean isNotNull() {
         return notNull;
     }
 
@@ -80,7 +80,7 @@ public class Attribute {
         this.notNull = notNull;
     }
 
-    public boolean getUnique() {
+    public boolean isUnique() {
         return unique;
     }
 
@@ -88,3 +88,4 @@ public class Attribute {
         this.unique = unique;
     }
 }
+
