@@ -6,10 +6,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,6 +39,14 @@ public class Json {
             }
         }
         return databases;
+    }
+
+    public static void saveDatabases(List<Database> databases) throws IOException {
+        for (Database database : databases) {
+            String filename = database.getName() + ".json";
+            FileWriter file = new FileWriter(filename);
+            file.write(nodeToString(database));
+        }
     }
 
     public static String nodeToString(Object obj) throws JsonProcessingException {

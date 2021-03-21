@@ -25,11 +25,20 @@ public class Table {
         }
     }
 
+    public Table(String name) {
+        this.name = name;
+        attributes = new ArrayList<>();
+    }
+
     public String getName() {
         return name;
     }
 
     public List<Attribute> getAttributes() {
         return attributes;
+    }
+
+    public void addAttribute(Attribute newAttribute){
+        attributes.add(newAttribute);
     }
 }
