@@ -4,7 +4,6 @@ import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class CommandProcessor {
     private List<Database> databases;
@@ -40,7 +39,10 @@ public class CommandProcessor {
                 databases.add(new Database(command[2]));
                 break;
             case "TABLE":
-                Database database = (Database) databases.stream().filter(o -> o.getName().equals(command[3]));
+                Database database = databases.stream()
+                        .filter(o -> o.getName().equals(command[3]))
+                        .findAny()
+                        .orElse(null);
                 if(database.getTables().stream().noneMatch(o -> o.getName().equals(command[2]))) {
                     database.addTable(new Table(command[2]));
                 }
@@ -54,13 +56,20 @@ public class CommandProcessor {
         //DELETE DATABASE <databasename>
         //DELETE TABLE <tablename> <databasename>
         if(command[1].equals("DATABASE")) {
-            Database database = (Database) databases.stream().filter(o -> o.getName().equals(command[2]));
+            Database database = databases.stream()
+                    .filter(o -> o.getName().equals(command[2]))
+                    .findAny().orElse(null);
             databases.remove(database);
         }
         else
             if(command[1].equals("TABLE")){
-                Database database = (Database) databases.stream().filter(o -> o.getName().equals(command[3]));
-                Table table = (Table) database.getTables().stream().filter(o -> o.getName().equals(command[2]));
+                Database database = databases.stream()
+                        .filter(o -> o.getName().equals(command[3]))
+                        .findAny().orElse(null);
+                assert database != null;
+                Table table = database.getTables().stream()
+                        .filter(o -> o.getName().equals(command[2]))
+                        .findAny().orElse(null);
                 database.removeTable(table);
             }
         //default errormsg
@@ -68,13 +77,29 @@ public class CommandProcessor {
 
     // ADD ATTRIBUTE <tablename> name#refTable#refColumn#pk#fk##notNULL#unique <databasename>
     public void addAttribute(String[] command){
-        Database database = (Database) databases.stream().filter(o -> o.getName().equals(command[4]));
-        Table table = (Table) database.getTables().stream().filter(o -> o.getName().equals(command[2]));
+        Database database = databases.stream()
+                .filter(o -> o.getName().equals(command[4]))
+                .findAny()
+                .orElse(null);
+        assert database != null;
+        Table table = database.getTables().stream()
+                .filter(o -> o.getName().equals(command[2]))
+                .findAny()
+                .orElse(null);
         String[] attributeProperties = command[3].split("#");
-        if(!attributeProperties[1].equals("-")){
-            Table refTable = (Table) database.getTables().stream().filter(o -> o.getName().equals(attributeProperties[1]));
-            Attribute refAttribute = (Attribute) refTable.getAttributes().stream().filter(o -> o.getName().equals(attributeProperties[2]));
-            if(refAttribute.ispK()){
+        assert table != null;
+        if(!attributeProperties[1].equals("")){
+            Table refTable = database.getTables().stream()
+                    .filter(o -> o.getName().equals(attributeProperties[1]))
+                    .findAny()
+                    .orElse(null);
+            assert refTable != null;
+            Attribute refAttribute = refTable.getAttributes().stream()
+                    .filter(o -> o.getName().equals(attributeProperties[2]))
+                    .findAny()
+                    .orElse(null);
+            assert refAttribute != null;
+            if(refAttribute.isPk()){
                 table.addAttribute(new Attribute(attributeProperties[0], attributeProperties[1], attributeProperties[2], Boolean.parseBoolean(attributeProperties[3]), Boolean.parseBoolean(attributeProperties[4]), Boolean.parseBoolean(attributeProperties[5]), Boolean.parseBoolean(attributeProperties[6])));
             }
         }

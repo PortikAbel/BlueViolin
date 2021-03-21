@@ -7,13 +7,21 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 public class ClientMain extends Application {
-
+    private FXMLLoader loader;
     @Override
     public void start(Stage stage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("MainWindow.fxml"));
+        loader = new FXMLLoader();
+        loader.setLocation(getClass().getResource("MainWindow.fxml"));
+        Parent root = loader.load();
         stage.setTitle("BlueViolin");
         stage.setScene(new Scene(root));
         stage.show();
+    }
+
+    @Override
+    public void stop() {
+        MainWindow mainWindow = loader.getController();
+        mainWindow.exitApplication();
     }
 
     public static void main(String[] args){

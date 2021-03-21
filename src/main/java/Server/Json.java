@@ -21,7 +21,7 @@ public class Json {
 
     public static List<Database> buildDatabases() throws IOException, ParseException {
         List<Database> databases = new ArrayList<>();
-        File dir = new File(".\\src\\main\\");
+        File dir = new File(".\\");
         File[] filesInDir = dir.listFiles();
         assert filesInDir != null;
         for (File file : filesInDir){
@@ -46,6 +46,8 @@ public class Json {
             String filename = database.getName() + ".json";
             FileWriter file = new FileWriter(filename);
             file.write(nodeToString(database));
+            file.close();
+            System.out.println(nodeToString(database));
         }
     }
 

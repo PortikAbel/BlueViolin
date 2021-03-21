@@ -1,11 +1,11 @@
 package Client;
 
 import Server.Attribute;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.stage.Stage;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -16,13 +16,13 @@ public class NewTable implements Initializable {
     @FXML
     private TextField tableNameTextField;
     @FXML
-    private TableView<Attribute> tableOfCols;
+    private TableView<Attribute> tableOfAttributes;
     @FXML
-    private TableColumn<Attribute, String> nameCol, refTableCol, refColumnCol;
+    private TableColumn<Attribute, String> nameCol, refTableCol, refAttributeCol;
     @FXML
     private TableColumn<Attribute, Boolean> pkCol, fkCol, notNullCol, uqCol;
     @FXML
-    private TextField nameTextField, refTableTextField, refColTextField;
+    private TextField nameTextField, refTableTextField, refAttributeTextField;
     @FXML
     private CheckBox pkChkBox, fkChkBox, notNullChkBox, uqChkBox;
 
@@ -31,9 +31,7 @@ public class NewTable implements Initializable {
     }
 
     public void create(){
-        mainWindow.addTable(tableNameTextField.getText(), tableOfCols.getItems());
-        Stage stage = (Stage) tableNameTextField.getScene().getWindow();
-        stage.close();
+        mainWindow.addTable(tableNameTextField.getText(), tableOfAttributes.getItems());
     }
 
     public void pkSelected() {
@@ -49,12 +47,12 @@ public class NewTable implements Initializable {
         }
     }
 
-    public void addColumn() {
-        tableOfCols.getItems().add(
+    public void addAttribute() {
+        tableOfAttributes.getItems().add(
                 new Attribute(
                         nameTextField.getText(),
                         refTableTextField.getText(),
-                        refColTextField.getText(),
+                        refAttributeTextField.getText(),
                         pkChkBox.isSelected(),
                         fkChkBox.isSelected(),
                         notNullChkBox.isSelected(),
@@ -63,13 +61,26 @@ public class NewTable implements Initializable {
         );
     }
 
+    public void contextMenu(){
+        ContextMenu contextMenu = new ContextMenu();
+        MenuItem deleteOption = new MenuItem("delete selected attributes");
+        deleteOption.setOnAction(event -> {
+            ObservableList<Attribute> allAttributes, selectedAttributes;
+            allAttributes = tableOfAttributes.getItems();
+            selectedAttributes = tableOfAttributes.getSelectionModel().getSelectedItems();
+            selectedAttributes.forEach(allAttributes::remove);
+        });
+        contextMenu.getItems().add(deleteOption);
+        tableOfAttributes.setContextMenu(contextMenu);
+    }
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         nameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
         refTableCol.setCellValueFactory(new PropertyValueFactory<>("refTable"));
-        refColumnCol.setCellValueFactory(new PropertyValueFactory<>("refColumn"));
-        pkCol.setCellValueFactory(new PropertyValueFactory<>("pK"));
-        fkCol.setCellValueFactory(new PropertyValueFactory<>("fK"));
+        refAttributeCol.setCellValueFactory(new PropertyValueFactory<>("refColumn"));
+        pkCol.setCellValueFactory(new PropertyValueFactory<>("pk"));
+        fkCol.setCellValueFactory(new PropertyValueFactory<>("fk"));
         notNullCol.setCellValueFactory(new PropertyValueFactory<>("notNull"));
         uqCol.setCellValueFactory(new PropertyValueFactory<>("unique"));
     }

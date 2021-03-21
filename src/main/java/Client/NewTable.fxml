@@ -43,11 +43,11 @@
                   <Font size="18.0" />
                </font>
             </Label>
-            <TableView fx:id="tableOfCols" minHeight="400.0" style="-fx-border-color: black;">
+            <TableView fx:id="tableOfAttributes" minHeight="400.0" onMouseClicked="#contextMenu" style="-fx-border-color: black;">
               <columns>
                 <TableColumn fx:id="nameCol" editable="false" minWidth="75.0" prefWidth="150.0" text="Column Name" />
                   <TableColumn fx:id="refTableCol" minWidth="75.0" prefWidth="150.0" text="Referencing Table" />
-                <TableColumn fx:id="refColumnCol" minWidth="75.0" prefWidth="150.0" text="Referencing Column" />
+                <TableColumn fx:id="refAttributeCol" minWidth="75.0" prefWidth="150.0" text="Referencing Column" />
                   <TableColumn fx:id="pkCol" minWidth="25.0" prefWidth="50.0" text="PK" />
                   <TableColumn fx:id="fkCol" minWidth="25.0" prefWidth="50.0" text="FK" />
                   <TableColumn fx:id="notNullCol" minWidth="25.0" prefWidth="75.0" text="Not NULL" />
@@ -62,7 +62,7 @@
                      </font>
                   </Label>
                   <Region prefWidth="200.0" HBox.hgrow="ALWAYS" />
-                  <Button mnemonicParsing="false" onAction="#addColumn" text="ADD" />
+                  <Button mnemonicParsing="false" onAction="#addAttribute" text="ADD" />
                </children>
                <VBox.margin>
                   <Insets top="20.0" />
@@ -96,7 +96,7 @@
                   <CheckBox fx:id="uqChkBox" mnemonicParsing="false" GridPane.columnIndex="6" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
                   <TextField fx:id="nameTextField" GridPane.rowIndex="1" />
                   <TextField fx:id="refTableTextField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                  <TextField fx:id="refColTextField" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                  <TextField fx:id="refAttributeTextField" GridPane.columnIndex="2" GridPane.rowIndex="1" />
                </children>
             </GridPane>
          </children>

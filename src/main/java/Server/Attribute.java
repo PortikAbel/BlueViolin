@@ -5,8 +5,8 @@ import org.json.simple.JSONObject;
 public class Attribute {
     private String name;
     private String refTable, refColumn;
-    private boolean pK;
-    private boolean fK;
+    private boolean pk;
+    private boolean fk;
     private boolean notNull;
     private boolean unique;
 
@@ -15,19 +15,19 @@ public class Attribute {
         this.name = (String) o.get("name");
         this.refTable = (String) o.get("refTable");
         this.refColumn = (String) o.get("refColumn");
-        this.pK = (boolean) o.get("pK");
-        this.fK = (boolean) o.get("fK");
-        this.notNull = (boolean) o.get("notNULL");
+        this.pk = (boolean) o.get("pk");
+        this.fk = (boolean) o.get("fk");
+        this.notNull = (boolean) o.get("notNull");
         this.unique = (boolean) o.get("unique");
 
     }
 
-    public Attribute(String name, String refTable, String refColumn, boolean pK, boolean fK, boolean notNull, boolean unique) {
+    public Attribute(String name, String refTable, String refColumn, boolean pk, boolean fk, boolean notNull, boolean unique) {
         this.name = name;
         this.refTable = refTable;
         this.refColumn = refColumn;
-        this.pK = pK;
-        this.fK = fK;
+        this.pk = pk;
+        this.fk = fk;
         this.notNull = notNull;
         this.unique = unique;
     }
@@ -56,20 +56,20 @@ public class Attribute {
         this.refColumn = refColumn;
     }
 
-    public boolean ispK() {
-        return pK;
+    public boolean isPk() {
+        return pk;
     }
 
-    public void setpK(boolean pK) {
-        this.pK = pK;
+    public void setPk(boolean pk) {
+        this.pk = pk;
     }
 
-    public boolean isfK() {
-        return fK;
+    public boolean isFk() {
+        return fk;
     }
 
-    public void setfK(boolean fK) {
-        this.fK = fK;
+    public void setFk(boolean fk) {
+        this.fk = fk;
     }
 
     public boolean isNotNull() {
