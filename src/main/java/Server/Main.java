@@ -12,19 +12,12 @@ import java.util.List;
 public class Main {
 
     public static void main(String[] args) throws IOException, ParseException {
-        List<Database> databases = Json.buildDatabases();
-
-        System.out.println(databases.get(0).getName());
-        System.out.println(Json.nodeToString(databases.get(0)));
-        System.out.println(databases.get(0).getTables().get(0).getName());
-        System.out.println(databases.get(0).getTables().get(1).getName());
-        System.out.println(databases.get(0).getTables().get(0).getAttributes().get(0).getName());
 
         int portNumber = 4242;
 
         try {
             ServerSocket serverSocket = new ServerSocket(portNumber);
-
+            CommandProcessor commandProcessor = new CommandProcessor();
             while(true) {
                 Socket clientSocket = serverSocket.accept();
                 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
@@ -32,9 +25,13 @@ public class Main {
 
                 String inputLine;
                 while ((inputLine = in.readLine()) != null) {
-                    System.out.println(inputLine);
-                    if (inputLine.equals("exit"))
+                    if (inputLine.equals("exit")) {
+                        out.println("bye");
+                        Json.saveDatabases(commandProcessor.getDatabases());
                         break;
+                    }
+                    commandProcessor.processCommand(inputLine);
+                    out.println("OK");
                 }
                 break;
             }
