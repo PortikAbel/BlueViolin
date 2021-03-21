@@ -83,36 +83,55 @@ public class MainWindow implements Initializable {
     }
 
     public void send(String msg){
-        clientToServerWriter.write(msg);
+        clientToServerWriter.println(msg);
     }
     public Stream<String> receive() { return serverToClientReader.lines(); }
 
-    public void stop() {
-        clientToServerWriter.write("exit");
-        try {
-            clientSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public void exitApplication() {
+        System.out.println("exiting");
+        send("exit");
+        receive();
     }
 
     public void addDatabase(String name) {
+        send("CREATE DATABASE " + name);
         System.out.println("CREATE DATABASE " + name);
         treeView.getSelectionModel().getSelectedItem().getChildren().add(new TreeItem<>(name));
     }
 
     private void deleteDatabase(TreeItem<String> database) {
+        send("DELETE DATABASE " + database.getValue());
         System.out.println("DELETE DATABASE " + database.getValue());
         database.getParent().getChildren().remove(database);
     }
 
     public void addTable(String name, ObservableList<Attribute> attributes) {
+        send("CREATE TABLE "
+                + name + " "
+                + treeView.getSelectionModel().getSelectedItem().getValue());
         System.out.println("CREATE TABLE " + name);
+        attributes.forEach(attribute ->
+                send("ADD ATTRIBUTE " + name
+                        + " " + attribute.getName()
+                        + "#" + attribute.getRefTable()
+                        + "#" + attribute.getRefColumn()
+                        + "#" + attribute.isPk()
+                        + "#" + attribute.isFk()
+                        + "#" + attribute.isNotNull()
+                        + "#" + attribute.isUnique()
+                        + " " + treeView.getSelectionModel().getSelectedItem().getValue()
+                )
+        );
         treeView.getSelectionModel().getSelectedItem().getChildren().add(new TreeItem<>(name));
     }
 
     private void deleteTable(TreeItem<String> table) {
-        System.out.println("DELETE TABLE " + table.getValue());
+        send("DELETE TABLE " + table.getValue()
+                + " " + table.getParent().getValue()
+        );
+        System.out.println("DELETE TABLE " + table.getValue()
+                + " " + table.getParent().getValue()
+        );
         table.getParent().getChildren().remove(table);
     }
 
@@ -160,12 +179,6 @@ public class MainWindow implements Initializable {
                             NewTable newTableController = loader.getController();
                             newTableController.setMainWindow(MainWindow.this);
                             borderPane.setCenter(newTableDialogue);
-                            /*
-                            Stage dialogueStage = new Stage();
-                            dialogueStage.setTitle("Create new table");
-                            dialogueStage.setScene(new Scene(newTableDialogue));
-                            dialogueStage.showAndWait();
-                            */
                         } catch (IOException e) {
                             e.printStackTrace();
                         }

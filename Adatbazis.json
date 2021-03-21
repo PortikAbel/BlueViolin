@@ -1,0 +1,26 @@
+{
+  "name" : "Adatbazis",
+  "tables" : [ {
+    "name" : "tabla1",
+    "attributes" : [ {
+      "name" : "ID",
+      "refTable" : "",
+      "refColumn" : "",
+      "pk" : true,
+      "fk" : false,
+      "notNull" : true,
+      "unique" : true
+    } ]
+  }, {
+    "name" : "tabla2",
+    "attributes" : [ {
+      "name" : "ID",
+      "refTable" : "",
+      "refColumn" : "",
+      "pk" : true,
+      "fk" : false,
+      "notNull" : true,
+      "unique" : true
+    } ]
+  } ]
+}
