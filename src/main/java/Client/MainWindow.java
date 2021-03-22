@@ -27,6 +27,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Stream;
@@ -34,6 +35,8 @@ import java.util.stream.Stream;
 public class MainWindow implements Initializable {
     private BufferedReader serverToClientReader;
     private PrintWriter clientToServerWriter;
+
+    private static TreeItem<String> selectedItem;
 
     @FXML
     private TreeView<String> treeView;
@@ -132,13 +135,17 @@ public class MainWindow implements Initializable {
         table.getParent().getChildren().remove(table);
     }
 
+    public void insertRows(ObservableList<ArrayList<String>> rows) {
+
+    }
+
     private class MouseEventHandler implements EventHandler<MouseEvent>
     {
         @Override
         public void handle(MouseEvent mouseEvent) {
             if (mouseEvent.getButton().equals(MouseButton.SECONDARY)) {
                 ContextMenu options = new ContextMenu();
-                TreeItem<String> selectedItem = treeView.getSelectionModel().getSelectedItem();
+                selectedItem = treeView.getSelectionModel().getSelectedItem();
 
                 //  new database
                 if (selectedItem.getValue().equals("databases")) {
@@ -188,10 +195,28 @@ public class MainWindow implements Initializable {
                 else {
                     MenuItem deleteTableOption = new MenuItem("delete table");
                     deleteTableOption.setOnAction( actionEvent -> deleteTable(selectedItem));
-                    options.getItems().add(deleteTableOption);
+
+                    MenuItem insertRowsOption = new MenuItem("insert rows");
+                    insertRowsOption.setOnAction( actionEvent -> {
+                        FXMLLoader loader = new FXMLLoader();
+                        loader.setLocation(getClass().getResource("InsertRowsWindow.fxml"));
+                        try {
+                            AnchorPane insertRowsDialogue = loader.load();
+                            InsertRowsWindow insertRowsController = loader.getController();
+                            insertRowsController.setMainWindow(MainWindow.this);
+                            borderPane.setCenter(insertRowsDialogue);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
+                    options.getItems().addAll(deleteTableOption, insertRowsOption);
                     treeView.setContextMenu(options);
                 }
             }
         }
+    }
+
+    static public TreeItem<String> getSelectedItem(){
+        return selectedItem;
     }
 }
