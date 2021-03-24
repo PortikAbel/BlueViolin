@@ -4,6 +4,7 @@ import Server.Attribute;
 import Server.Database;
 import Server.Json;
 import Server.Table;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -30,6 +31,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class MainWindow implements Initializable {
@@ -85,18 +87,24 @@ public class MainWindow implements Initializable {
     public void send(String msg){
         clientToServerWriter.println(msg);
     }
-    public Stream<String> receive() { return serverToClientReader.lines(); }
+    public String receive() {
+        try {
+            return serverToClientReader.readLine();
+        } catch (IOException e) {
+            return "";
+        }
+    }
 
     public void exitApplication() {
         System.out.println("exiting");
         send("exit");
-        receive();
+        System.out.println(receive());
     }
 
     public void addDatabase(String name) {
         send("CREATE DATABASE " + name);
         System.out.println("CREATE DATABASE " + name);
-        treeView.getSelectionModel().getSelectedItem().getChildren().add(new TreeItem<>(name));
+        selectedItem.getChildren().add(new TreeItem<>(name));
     }
 
     private void deleteDatabase(TreeItem<String> database) {
@@ -108,7 +116,7 @@ public class MainWindow implements Initializable {
     public void addTable(String name, ObservableList<Attribute> attributes) {
         send("CREATE TABLE "
                 + name + " "
-                + treeView.getSelectionModel().getSelectedItem().getValue());
+                + selectedItem.getValue());
         System.out.println("CREATE TABLE " + name);
         attributes.forEach(attribute ->
                 send("ADD ATTRIBUTE " + name
@@ -119,10 +127,10 @@ public class MainWindow implements Initializable {
                         + "#" + attribute.isFk()
                         + "#" + attribute.isNotNull()
                         + "#" + attribute.isUnique()
-                        + " " + treeView.getSelectionModel().getSelectedItem().getValue()
+                        + " " + selectedItem.getValue()
                 )
         );
-        treeView.getSelectionModel().getSelectedItem().getChildren().add(new TreeItem<>(name));
+        selectedItem.getChildren().add(new TreeItem<>(name));
     }
 
     private void deleteTable(TreeItem<String> table) {
@@ -135,8 +143,16 @@ public class MainWindow implements Initializable {
         table.getParent().getChildren().remove(table);
     }
 
-    public void insertRows(ObservableList<ArrayList<String>> rows) {
-
+    public void insertRows(ObservableList<ObservableList<SimpleStringProperty>> rows) {
+        send("INSERT INTO " + selectedItem.getValue() + " VALUES");
+        rows.forEach(
+                row -> send(
+                        row.stream()
+                                .map(SimpleStringProperty::getValue)
+                                .collect(Collectors.joining("#"))
+                )
+        );
+        send(";");
     }
 
     private class MouseEventHandler implements EventHandler<MouseEvent>

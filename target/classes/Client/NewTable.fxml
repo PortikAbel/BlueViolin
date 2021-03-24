@@ -90,7 +90,7 @@
                   <Label text="FK" GridPane.columnIndex="4" GridPane.halignment="CENTER" />
                   <Label text="Not NULL" GridPane.columnIndex="5" GridPane.halignment="CENTER" />
                   <Label text="UQ" GridPane.columnIndex="6" GridPane.halignment="CENTER" />
-                  <CheckBox fx:id="pkChkBox" mnemonicParsing="false" onAction="#pkSelected" GridPane.columnIndex="3" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
+                  <CheckBox fx:id="pkChkBox" mnemonicParsing="false" GridPane.columnIndex="3" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
                   <CheckBox fx:id="fkChkBox" mnemonicParsing="false" GridPane.columnIndex="4" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
                   <CheckBox fx:id="notNullChkBox" mnemonicParsing="false" GridPane.columnIndex="5" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
                   <CheckBox fx:id="uqChkBox" mnemonicParsing="false" GridPane.columnIndex="6" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
