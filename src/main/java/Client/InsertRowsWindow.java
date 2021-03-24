@@ -1,27 +1,27 @@
 package Client;
 
+import Server.Attribute;
 import Server.Database;
 import Server.Json;
 import Server.Table;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
 public class InsertRowsWindow implements Initializable {
     private MainWindow mainWindow;
     @FXML
-    private TableView<ArrayList<String>> tableOfAttributes;
+    private TableView<ObservableList<SimpleStringProperty>> tableOfAttributes;
     @FXML
     private HBox valuesBox;
     @FXML
@@ -57,21 +57,57 @@ public class InsertRowsWindow implements Initializable {
 
         assert tbl != null;
         tableNameLabel.setText(tbl.getName());
-        tbl.getAttributes().forEach(
-                attribute -> {
-                    TableColumn<ArrayList<String>, String> newColumn = new TableColumn<>();
-                    newColumn.setText(attribute.getName());
-                    tableOfAttributes.getColumns().add(newColumn);
 
-                    TextField textField = new TextField();
-                    textField.setPromptText(attribute.getName());
-                    valuesBox.getChildren().add(textField);
-                }
-        );
+
+        for (int i = 0; i < tbl.getAttributes().size(); i++)
+        {
+            Attribute attribute = tbl.getAttributes().get(i);
+
+            TextField textField = new TextField();
+            textField.setPromptText(attribute.getName());
+            valuesBox.getChildren().add(textField);
+
+            TableColumn<ObservableList<SimpleStringProperty>, String> newColumn = new TableColumn<>();
+            newColumn.setText(attribute.getName());
+            newColumn.setEditable(true);
+            setCellValueFactory(newColumn, i);
+            tableOfAttributes.getColumns().add(newColumn);
+        }
+    }
+
+    private void setCellValueFactory(TableColumn<ObservableList<SimpleStringProperty>, String> column, final int index)
+    {
+        column.setCellValueFactory(row -> row.getValue().get(index));
     }
 
     public void setMainWindow(MainWindow mainWindow){
         this.mainWindow = mainWindow;
+    }
+
+    public void addRow() {
+        ObservableList<SimpleStringProperty> row = FXCollections.observableArrayList();
+
+        valuesBox.getChildren().forEach(
+                attribute -> {
+                    row.add(new SimpleStringProperty( ((TextField)attribute).getText() ));
+                    ((TextField)attribute).clear();
+                }
+        );
+
+        tableOfAttributes.getItems().add(row);
+    }
+
+    public void contextMenu(){
+        ContextMenu contextMenu = new ContextMenu();
+        MenuItem deleteOption = new MenuItem("delete selected rows");
+        deleteOption.setOnAction(event -> {
+            ObservableList<ObservableList<SimpleStringProperty>> allAttributes, selectedAttributes;
+            allAttributes = tableOfAttributes.getItems();
+            selectedAttributes = tableOfAttributes.getSelectionModel().getSelectedItems();
+            selectedAttributes.forEach(allAttributes::remove);
+        });
+        contextMenu.getItems().add(deleteOption);
+        tableOfAttributes.setContextMenu(contextMenu);
     }
 
     public void insert() {

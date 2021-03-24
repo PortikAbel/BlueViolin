@@ -10,7 +10,6 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-
 <AnchorPane xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Client.InsertRowsWindow">
    <children>
       <VBox spacing="10.0">
@@ -31,12 +30,12 @@
                   <Button mnemonicParsing="false" onAction="#insert" text="INSERT" />
                </children>
             </HBox>
-            <TableView fx:id="tableOfAttributes" />
+            <TableView fx:id="tableOfAttributes" editable="true" onMouseClicked="#contextMenu" />
             <HBox fx:id="valuesBox" spacing="5.0" />
             <HBox>
                <children>
                   <Region prefWidth="200.0" HBox.hgrow="ALWAYS" />
-                  <Button mnemonicParsing="false" text="Add Values" />
+                  <Button mnemonicParsing="false" onAction="#addRow" text="Add Values" />
                </children>
             </HBox>
          </children>
