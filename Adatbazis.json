@@ -1,19 +1,7 @@
 {
-  "name" : "Adatbazis",
+  "name" : "ADATBAZIS",
   "tables" : [ {
-    "name" : "tabla1",
-    "attributes" : [ {
-      "name" : "ID",
-      "refTable" : "",
-      "refColumn" : "",
-      "pk" : true,
-      "fk" : false,
-      "notNull" : true,
-      "unique" : true,
-      "index" : false
-    } ]
-  }, {
-    "name" : "tabla2",
+    "name" : "uj_tabla",
     "attributes" : [ {
       "name" : "ID",
       "refTable" : "",
