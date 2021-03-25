@@ -9,7 +9,8 @@
       "pk" : true,
       "fk" : false,
       "notNull" : true,
-      "unique" : true
+      "unique" : true,
+      "index" : false
     }, {
       "name" : "ghgg",
       "refTable" : "",
@@ -17,7 +18,8 @@
       "pk" : false,
       "fk" : false,
       "notNull" : false,
-      "unique" : true
+      "unique" : true,
+      "index" : false
     } ]
   } ]
 }

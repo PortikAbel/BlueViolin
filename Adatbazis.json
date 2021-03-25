@@ -9,7 +9,8 @@
       "pk" : true,
       "fk" : false,
       "notNull" : true,
-      "unique" : true
+      "unique" : true,
+      "index" : false
     } ]
   }, {
     "name" : "tabla2",
@@ -20,7 +21,8 @@
       "pk" : true,
       "fk" : false,
       "notNull" : true,
-      "unique" : true
+      "unique" : true,
+      "index" : false
     } ]
   } ]
 }

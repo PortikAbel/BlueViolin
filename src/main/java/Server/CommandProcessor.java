@@ -28,6 +28,8 @@ public class CommandProcessor {
             case "ADD":
                 addAttribute(dividedCommand);
                 break;
+            case "INSERT":
+                insert(dividedCommand);
         }
     }
 
@@ -106,5 +108,9 @@ public class CommandProcessor {
         else{
             table.addAttribute(new Attribute(attributeProperties[0], attributeProperties[1], attributeProperties[2], Boolean.parseBoolean(attributeProperties[3]), Boolean.parseBoolean(attributeProperties[4]), Boolean.parseBoolean(attributeProperties[5]), Boolean.parseBoolean(attributeProperties[6])));
         }
+    }
+
+    public void insert(String[] dividedCommand){
+
     }
 }

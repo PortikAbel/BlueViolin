@@ -9,6 +9,7 @@ public class Attribute {
     private boolean fk;
     private boolean notNull;
     private boolean unique;
+    private boolean index;
 
     public Attribute(JSONObject o) {
 
@@ -19,10 +20,11 @@ public class Attribute {
         this.fk = (boolean) o.get("fk");
         this.notNull = (boolean) o.get("notNull");
         this.unique = (boolean) o.get("unique");
+        this.index = (boolean) o.get("index");
 
     }
 
-    public Attribute(String name, String refTable, String refColumn, boolean pk, boolean fk, boolean notNull, boolean unique) {
+    public Attribute(String name, String refTable, String refColumn, boolean pk, boolean fk, boolean notNull, boolean unique, boolean index) {
         this.name = name;
         this.refTable = refTable;
         this.refColumn = refColumn;
@@ -30,6 +32,7 @@ public class Attribute {
         this.fk = fk;
         this.notNull = notNull;
         this.unique = unique;
+        this.index = index;
     }
 
     public String getName() {
@@ -86,6 +89,14 @@ public class Attribute {
 
     public void setUnique(boolean unique) {
         this.unique = unique;
+    }
+
+    public boolean isIndex() {
+        return index;
+    }
+
+    public void setIndex(boolean index) {
+        this.index = index;
     }
 }
 
