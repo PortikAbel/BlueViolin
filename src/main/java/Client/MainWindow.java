@@ -156,6 +156,10 @@ public class MainWindow implements Initializable {
         send(";");
     }
 
+    public void createIndex() {
+
+    }
+
     private class MouseEventHandler implements EventHandler<MouseEvent>
     {
         @Override
@@ -219,7 +223,7 @@ public class MainWindow implements Initializable {
                         loader.setLocation(getClass().getResource("CreateIndexWindow.fxml"));
                         try {
                             AnchorPane createIndexDialogue = loader.load();
-                            InsertRowsWindow createIndexController = loader.getController();
+                            CreateIndexWindow createIndexController = loader.getController();
                             createIndexController.setMainWindow(MainWindow.this);
                             borderPane.setCenter(createIndexDialogue);
                         } catch (IOException e) {
@@ -240,7 +244,7 @@ public class MainWindow implements Initializable {
                             e.printStackTrace();
                         }
                     });
-                    options.getItems().addAll(deleteTableOption, insertRowsOption);
+                    options.getItems().addAll(deleteTableOption, createIndexOption, insertRowsOption);
                     treeView.setContextMenu(options);
                 }
             }
