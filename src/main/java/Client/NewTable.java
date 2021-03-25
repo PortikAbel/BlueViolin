@@ -20,11 +20,11 @@ public class NewTable implements Initializable {
     @FXML
     private TableColumn<Attribute, String> nameCol, refTableCol, refAttributeCol;
     @FXML
-    private TableColumn<Attribute, Boolean> pkCol, fkCol, notNullCol, uqCol;
+    private TableColumn<Attribute, Boolean> pkCol, fkCol, notNullCol, uqCol, indexCol;
     @FXML
     private TextField nameTextField, refTableTextField, refAttributeTextField;
     @FXML
-    private CheckBox pkChkBox, fkChkBox, notNullChkBox, uqChkBox;
+    private CheckBox pkChkBox, fkChkBox, notNullChkBox, uqChkBox, indexChkBox;
 
     public void setMainWindow(MainWindow mainWindow) {
         this.mainWindow = mainWindow;
@@ -32,19 +32,6 @@ public class NewTable implements Initializable {
 
     public void create(){
         mainWindow.addTable(tableNameTextField.getText(), tableOfAttributes.getItems());
-    }
-
-    public void pkSelected() {
-        if (pkChkBox.isSelected()) {
-            notNullChkBox.setSelected(true);
-            notNullChkBox.setDisable(true);
-            uqChkBox.setSelected(true);
-            uqChkBox.setDisable(true);
-        }
-        else {
-            notNullChkBox.setDisable(false);
-            uqChkBox.setDisable(false);
-        }
     }
 
     public void addAttribute() {
@@ -56,7 +43,8 @@ public class NewTable implements Initializable {
                         pkChkBox.isSelected(),
                         fkChkBox.isSelected(),
                         notNullChkBox.isSelected(),
-                        uqChkBox.isSelected()
+                        uqChkBox.isSelected(),
+                        indexChkBox.isSelected()
                 )
         );
     }
@@ -83,5 +71,19 @@ public class NewTable implements Initializable {
         fkCol.setCellValueFactory(new PropertyValueFactory<>("fk"));
         notNullCol.setCellValueFactory(new PropertyValueFactory<>("notNull"));
         uqCol.setCellValueFactory(new PropertyValueFactory<>("unique"));
+        indexCol.setCellValueFactory(new PropertyValueFactory<>("index"));
+    }
+
+    public void pkSelected() {
+        if (pkChkBox.isSelected()) {
+            notNullChkBox.setSelected(true);
+            notNullChkBox.setDisable(true);
+            uqChkBox.setSelected(true);
+            uqChkBox.setDisable(true);
+        }
+        else {
+            notNullChkBox.setDisable(false);
+            uqChkBox.setDisable(false);
+        }
     }
 }

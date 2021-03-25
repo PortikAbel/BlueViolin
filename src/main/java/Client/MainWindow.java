@@ -127,6 +127,7 @@ public class MainWindow implements Initializable {
                         + "#" + attribute.isFk()
                         + "#" + attribute.isNotNull()
                         + "#" + attribute.isUnique()
+                        + "#" + attribute.isIndex()
                         + " " + selectedItem.getValue()
                 )
         );
@@ -207,10 +208,24 @@ public class MainWindow implements Initializable {
                     treeView.setContextMenu(options);
                 }
 
-                // delete table
+                // delete table / create index / insert rows
                 else {
                     MenuItem deleteTableOption = new MenuItem("delete table");
                     deleteTableOption.setOnAction( actionEvent -> deleteTable(selectedItem));
+
+                    MenuItem createIndexOption = new MenuItem("create index");
+                    createIndexOption.setOnAction( actionEvent -> {
+                        FXMLLoader loader = new FXMLLoader();
+                        loader.setLocation(getClass().getResource("CreateIndexWindow.fxml"));
+                        try {
+                            AnchorPane createIndexDialogue = loader.load();
+                            InsertRowsWindow createIndexController = loader.getController();
+                            createIndexController.setMainWindow(MainWindow.this);
+                            borderPane.setCenter(createIndexDialogue);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
 
                     MenuItem insertRowsOption = new MenuItem("insert rows");
                     insertRowsOption.setOnAction( actionEvent -> {
