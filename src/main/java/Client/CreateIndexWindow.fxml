@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Client.CreateIndexWindow">
+   <children>
+      <VBox spacing="5.0">
+         <children>
+            <Label text="Create index on attribute">
+               <font>
+                  <Font size="18.0" />
+               </font>
+            </Label>
+            <ChoiceBox fx:id="attributesMenu" prefWidth="150.0" />
+            <HBox>
+               <children>
+                  <Region HBox.hgrow="ALWAYS" />
+                  <Button mnemonicParsing="false" onAction="#create" text="CREATE" />
+               </children>
+            </HBox>
+         </children>
+         <opaqueInsets>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+         </opaqueInsets>
+         <padding>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+         </padding>
+      </VBox>
+   </children>
+</AnchorPane>
