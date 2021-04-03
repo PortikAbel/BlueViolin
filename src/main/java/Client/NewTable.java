@@ -20,11 +20,11 @@ public class NewTable implements Initializable {
     @FXML
     private TableColumn<Attribute, String> nameCol, refTableCol, refAttributeCol;
     @FXML
-    private TableColumn<Attribute, Boolean> pkCol, fkCol, notNullCol, uqCol, indexCol;
+    private TableColumn<Attribute, Boolean> pkCol, fkCol, notNullCol, uqCol;
     @FXML
     private TextField nameTextField, refTableTextField, refAttributeTextField;
     @FXML
-    private CheckBox pkChkBox, fkChkBox, notNullChkBox, uqChkBox, indexChkBox;
+    private CheckBox pkChkBox, fkChkBox, notNullChkBox, uqChkBox;
 
     public void setMainWindow(MainWindow mainWindow) {
         this.mainWindow = mainWindow;
@@ -43,8 +43,7 @@ public class NewTable implements Initializable {
                         pkChkBox.isSelected(),
                         fkChkBox.isSelected(),
                         notNullChkBox.isSelected(),
-                        uqChkBox.isSelected(),
-                        indexChkBox.isSelected()
+                        uqChkBox.isSelected()
                 )
         );
     }
@@ -71,19 +70,5 @@ public class NewTable implements Initializable {
         fkCol.setCellValueFactory(new PropertyValueFactory<>("fk"));
         notNullCol.setCellValueFactory(new PropertyValueFactory<>("notNull"));
         uqCol.setCellValueFactory(new PropertyValueFactory<>("unique"));
-        indexCol.setCellValueFactory(new PropertyValueFactory<>("index"));
-    }
-
-    public void pkSelected() {
-        if (pkChkBox.isSelected()) {
-            notNullChkBox.setSelected(true);
-            notNullChkBox.setDisable(true);
-            uqChkBox.setSelected(true);
-            uqChkBox.setDisable(true);
-        }
-        else {
-            notNullChkBox.setDisable(false);
-            uqChkBox.setDisable(false);
-        }
     }
 }

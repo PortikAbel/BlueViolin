@@ -7,7 +7,6 @@ import Server.Table;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.MenuItem;
 import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
@@ -64,6 +63,6 @@ public class CreateIndexWindow implements Initializable {
     }
 
     public void create() {
-        mainWindow.createIndex();
+        mainWindow.createIndex(attributesMenu.getValue());
     }
 }
