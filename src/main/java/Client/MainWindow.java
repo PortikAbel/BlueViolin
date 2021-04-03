@@ -179,8 +179,12 @@ public class MainWindow implements Initializable {
         System.out.println(command);
     }
 
-    public void createIndex(String columnName) {
-
+    public void createIndex(String indexName, String columnNames) {
+        System.out.println(String.format("CREATE INDEX %s ON %s(%s)",
+                indexName,
+                selectedItem.getValue(),
+                columnNames)
+        );
     }
 
     private class MouseEventHandler implements EventHandler<MouseEvent>
