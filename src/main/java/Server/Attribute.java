@@ -24,7 +24,7 @@ public class Attribute {
 
     }
 
-    public Attribute(String name, String refTable, String refColumn, boolean pk, boolean fk, boolean notNull, boolean unique, boolean index) {
+    public Attribute(String name, String refTable, String refColumn, boolean pk, boolean fk, boolean notNull, boolean unique) {
         this.name = name;
         this.refTable = refTable;
         this.refColumn = refColumn;
@@ -32,7 +32,7 @@ public class Attribute {
         this.fk = fk;
         this.notNull = notNull;
         this.unique = unique;
-        this.index = index;
+        this.index = false;
     }
 
     public String getName() {

@@ -39,6 +39,7 @@ public class MainWindow implements Initializable {
     private PrintWriter clientToServerWriter;
 
     private static TreeItem<String> selectedItem;
+    private String selectedDatabase = "master";
 
     @FXML
     private TreeView<String> treeView;
@@ -102,35 +103,53 @@ public class MainWindow implements Initializable {
     }
 
     public void addDatabase(String name) {
+        // CREATE DATABASE -database name-
         send("CREATE DATABASE " + name);
         System.out.println("CREATE DATABASE " + name);
         selectedItem.getChildren().add(new TreeItem<>(name));
     }
 
     private void deleteDatabase(TreeItem<String> database) {
+        // DELETE DATABASE -database name-
         send("DELETE DATABASE " + database.getValue());
         System.out.println("DELETE DATABASE " + database.getValue());
         database.getParent().getChildren().remove(database);
     }
 
     public void addTable(String name, ObservableList<Attribute> attributes) {
-        send("CREATE TABLE "
-                + name + " "
-                + selectedItem.getValue());
-        System.out.println("CREATE TABLE " + name);
-        attributes.forEach(attribute ->
-                send("ADD ATTRIBUTE " + name
-                        + " " + attribute.getName()
-                        + "#" + attribute.getRefTable()
-                        + "#" + attribute.getRefColumn()
-                        + "#" + attribute.isPk()
-                        + "#" + attribute.isFk()
-                        + "#" + attribute.isNotNull()
-                        + "#" + attribute.isUnique()
-                        + "#" + attribute.isIndex()
-                        + " " + selectedItem.getValue()
-                )
+        //send(String.format("USE DATABASE %s;", selectedItem.getValue()));
+        System.out.printf("USE DATABASE %s;%n", selectedItem.getValue());
+
+        // CREATE TABLE -table name- (
+        //  -column name- -column type- -NOT NULL- -UNIQUE- -FOREIGN KEY REFERENCES database_name(column_name)-,
+        //  );
+        String command = "CREATE TABLE ";
+        command += name;
+        command += " (\n";
+        command += attributes.stream().map(attribute -> {
+            String attrDef = attribute.getName();
+            if (attribute.isNotNull())
+                attrDef += " NOT NULL";
+            if (attribute.isUnique())
+                attrDef += " UNIQUE";
+            if (attribute.isFk())
+                attrDef += String.format(" FOREIGN KEY REFERENCES %s(%s)",
+                        attribute.getRefTable(),
+                        attribute.getRefColumn()
+                );
+            return attrDef;
+        }).collect(Collectors.joining(",\n"));
+        command += String.format(",\nPRIMARY KEY (%s)",
+                attributes.stream()
+                        .filter(Attribute::isPk)
+                        .map(Attribute::getName)
+                        .collect(Collectors.joining(","))
         );
+
+        command += "\n);";
+        //send(command);
+        System.out.println(command);
+
         selectedItem.getChildren().add(new TreeItem<>(name));
     }
 
@@ -145,18 +164,22 @@ public class MainWindow implements Initializable {
     }
 
     public void insertRows(ObservableList<ObservableList<SimpleStringProperty>> rows) {
-        send("INSERT INTO " + selectedItem.getValue() + " VALUES");
-        rows.forEach(
-                row -> send(
-                        row.stream()
+        String command = String.format("INSERT INTO %s VALUES %s;",
+                selectedItem.getValue(),
+                rows.stream().map(
+                        row -> String.format("(%s)", row.stream()
                                 .map(SimpleStringProperty::getValue)
-                                .collect(Collectors.joining("#"))
+                                .collect(Collectors.joining(","))
+                        )
                 )
+                .collect(Collectors.joining(",\n"))
         );
-        send(";");
+
+        //send(command);
+        System.out.println(command);
     }
 
-    public void createIndex() {
+    public void createIndex(String columnName) {
 
     }
 
@@ -192,6 +215,10 @@ public class MainWindow implements Initializable {
 
                 //  delete database / new table
                 else if (selectedItem.getParent().getValue().equals("databases")) {
+                    if (!selectedDatabase.equals(selectedItem.getValue())) {
+                        selectedDatabase = selectedItem.getValue();
+                        send(String.format("USE %s;", selectedDatabase));
+                    }
                     MenuItem deleteDatabaseOption = new MenuItem("delete database");
                     deleteDatabaseOption.setOnAction( actionEvent -> deleteDatabase(selectedItem));
 
@@ -214,6 +241,11 @@ public class MainWindow implements Initializable {
 
                 // delete table / create index / insert rows
                 else {
+                    if (!selectedDatabase.equals(selectedItem.getParent().getValue())) {
+                        selectedDatabase = selectedItem.getParent().getValue();
+                        send(String.format("USE %s;", selectedDatabase));
+                    }
+
                     MenuItem deleteTableOption = new MenuItem("delete table");
                     deleteTableOption.setOnAction( actionEvent -> deleteTable(selectedItem));
 
