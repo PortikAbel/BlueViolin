@@ -52,7 +52,6 @@
                   <TableColumn fx:id="fkCol" minWidth="25.0" prefWidth="50.0" text="FK" />
                   <TableColumn fx:id="notNullCol" minWidth="25.0" prefWidth="75.0" text="Not NULL" />
                   <TableColumn fx:id="uqCol" minWidth="25.0" prefWidth="50.0" text="UQ" />
-                  <TableColumn fx:id="indexCol" prefWidth="75.0" text="INDEX" />
               </columns>
             </TableView>
             <HBox>
@@ -78,7 +77,6 @@
                   <ColumnConstraints hgrow="SOMETIMES" minWidth="25.0" prefWidth="50.0" />
                   <ColumnConstraints hgrow="SOMETIMES" minWidth="25.0" prefWidth="75.0" />
                   <ColumnConstraints hgrow="SOMETIMES" minWidth="25.0" prefWidth="50.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" minWidth="25.0" prefWidth="50.0" />
               </columnConstraints>
               <rowConstraints>
                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
@@ -99,8 +97,6 @@
                   <TextField fx:id="nameTextField" GridPane.rowIndex="1" />
                   <TextField fx:id="refTableTextField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                   <TextField fx:id="refAttributeTextField" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-                  <Label alignment="CENTER" contentDisplay="CENTER" text="INDEX" GridPane.columnIndex="7" GridPane.halignment="CENTER" GridPane.valignment="CENTER" />
-                  <CheckBox fx:id="indexChkBox" alignment="CENTER" contentDisplay="CENTER" ellipsisString="" mnemonicParsing="false" GridPane.columnIndex="7" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
                </children>
             </GridPane>
          </children>
