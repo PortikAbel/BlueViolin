@@ -102,11 +102,11 @@ public class CommandProcessor {
                     .orElse(null);
             assert refAttribute != null;
             if(refAttribute.isPk()){
-                table.addAttribute(new Attribute(attributeProperties[0], attributeProperties[1], attributeProperties[2], Boolean.parseBoolean(attributeProperties[3]), Boolean.parseBoolean(attributeProperties[4]), Boolean.parseBoolean(attributeProperties[5]), Boolean.parseBoolean(attributeProperties[6])));
+                table.addAttribute(new Attribute(attributeProperties[0], attributeProperties[1], attributeProperties[2], attributeProperties[3], Boolean.parseBoolean(attributeProperties[4]), Boolean.parseBoolean(attributeProperties[5]), Boolean.parseBoolean(attributeProperties[6]), Boolean.parseBoolean(attributeProperties[7])));
             }
         }
         else{
-            table.addAttribute(new Attribute(attributeProperties[0], attributeProperties[1], attributeProperties[2], Boolean.parseBoolean(attributeProperties[3]), Boolean.parseBoolean(attributeProperties[4]), Boolean.parseBoolean(attributeProperties[5]), Boolean.parseBoolean(attributeProperties[6])));
+            table.addAttribute(new Attribute(attributeProperties[0], attributeProperties[1], attributeProperties[2], attributeProperties[3], Boolean.parseBoolean(attributeProperties[4]), Boolean.parseBoolean(attributeProperties[5]), Boolean.parseBoolean(attributeProperties[6]), Boolean.parseBoolean(attributeProperties[6])));
         }
     }
 

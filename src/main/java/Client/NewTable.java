@@ -18,11 +18,13 @@ public class NewTable implements Initializable {
     @FXML
     private TableView<Attribute> tableOfAttributes;
     @FXML
-    private TableColumn<Attribute, String> nameCol, refTableCol, refAttributeCol;
+    private TableColumn<Attribute, String> nameCol, dataTypeCol, refTableCol, refAttributeCol;
     @FXML
     private TableColumn<Attribute, Boolean> pkCol, fkCol, notNullCol, uqCol;
     @FXML
     private TextField nameTextField, refTableTextField, refAttributeTextField;
+    @FXML
+    private ComboBox<String> dataTypeComboBox;
     @FXML
     private CheckBox pkChkBox, fkChkBox, notNullChkBox, uqChkBox;
 
@@ -38,6 +40,7 @@ public class NewTable implements Initializable {
         tableOfAttributes.getItems().add(
                 new Attribute(
                         nameTextField.getText(),
+                        dataTypeComboBox.getValue(),
                         refTableTextField.getText(),
                         refAttributeTextField.getText(),
                         pkChkBox.isSelected(),
@@ -64,6 +67,7 @@ public class NewTable implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         nameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
+        dataTypeCol.setCellValueFactory(new PropertyValueFactory<>("dataType"));
         refTableCol.setCellValueFactory(new PropertyValueFactory<>("refTable"));
         refAttributeCol.setCellValueFactory(new PropertyValueFactory<>("refColumn"));
         pkCol.setCellValueFactory(new PropertyValueFactory<>("pk"));

@@ -4,6 +4,7 @@ import org.json.simple.JSONObject;
 
 public class Attribute {
     private String name;
+    private String dataType;
     private String refTable, refColumn;
     private boolean pk;
     private boolean fk;
@@ -14,6 +15,7 @@ public class Attribute {
     public Attribute(JSONObject o) {
 
         this.name = (String) o.get("name");
+        this.dataType = (String) o.get("dataType");
         this.refTable = (String) o.get("refTable");
         this.refColumn = (String) o.get("refColumn");
         this.pk = (boolean) o.get("pk");
@@ -24,8 +26,9 @@ public class Attribute {
 
     }
 
-    public Attribute(String name, String refTable, String refColumn, boolean pk, boolean fk, boolean notNull, boolean unique) {
+    public Attribute(String name, String dataType, String refTable, String refColumn, boolean pk, boolean fk, boolean notNull, boolean unique) {
         this.name = name;
+        this.dataType = dataType;
         this.refTable = refTable;
         this.refColumn = refColumn;
         this.pk = pk;
@@ -41,6 +44,14 @@ public class Attribute {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDataType() {
+        return dataType;
+    }
+
+    public void setDataType(String dataType) {
+        this.dataType = dataType;
     }
 
     public String getRefTable() {
