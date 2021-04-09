@@ -2,6 +2,8 @@ package Server;
 
 import org.json.simple.JSONObject;
 
+import java.util.Arrays;
+
 public class Attribute {
     private String name;
     private String dataType;
@@ -36,6 +38,54 @@ public class Attribute {
         this.notNull = notNull;
         this.unique = unique;
         this.index = false;
+    }
+    //-column name- -column type- -NOT NULL- -UNIQUE- -REFERENCES database_name(column_name)
+    public Attribute(String[] command){
+        this.name = command[0];
+        this.dataType = command[1];
+        this.refTable = null;
+        this.refColumn = null;
+        this.pk = false;
+        this.fk = false;
+        this.notNull = false;
+        this.unique = false;
+        this.index = false;
+        int i = 2;
+        while( i < command.length){
+            switch (command[i].toUpperCase()) {
+                case "PRIMARY":
+                    if (command[i + 1].equals("KEY")) {
+                        pk = true;
+                        i += 2;
+                    }
+                    else {
+                        i++;
+                    }
+                    break;
+                case "NOT":
+                    if (command[i + 1].equals("NULL")) {
+                        notNull = true;
+                        i += 2;
+                    }
+                    else {
+                        i++;
+                    }
+                    break;
+                case "UNIQUE":
+                    unique = true;
+                    i++;
+                    break;
+                case "REFERENCES":
+                    fk = true;
+                    String[] references = command[i+1].substring(0, command[i+1].length() - 1).split("\\(");
+                    refTable = references[0];
+                    refColumn = references[1];
+                    i += 2;
+                    break;
+                default:
+                    i++;
+            }
+        }
     }
 
     public String getName() {

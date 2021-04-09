@@ -4,6 +4,7 @@
     "name" : "AB_tabla",
     "attributes" : [ {
       "name" : "adfh",
+      "dataType" : null,
       "refTable" : "",
       "refColumn" : "",
       "pk" : true,
@@ -13,6 +14,7 @@
       "index" : false
     }, {
       "name" : "ghgg",
+      "dataType" : null,
       "refTable" : "",
       "refColumn" : "",
       "pk" : false,

@@ -121,7 +121,7 @@ public class MainWindow implements Initializable {
         System.out.printf("USE DATABASE %s;%n", selectedItem.getValue());
 
         // CREATE TABLE -table name- (
-        //  -column name- -column type- -NOT NULL- -UNIQUE- -FOREIGN KEY REFERENCES database_name(column_name)-,
+        //  -column name- -column type- -NOT NULL- -UNIQUE- -FOREIGN KEY REFERENCES table_name(column_name)-,
         //  );
         String command = "CREATE TABLE ";
         command += name;
@@ -133,7 +133,7 @@ public class MainWindow implements Initializable {
             if (attribute.isUnique())
                 attrDef += " UNIQUE";
             if (attribute.isFk())
-                attrDef += String.format(" FOREIGN KEY REFERENCES %s(%s)",
+                attrDef += String.format(" REFERENCES %s(%s)",
                         attribute.getRefTable(),
                         attribute.getRefColumn()
                 );

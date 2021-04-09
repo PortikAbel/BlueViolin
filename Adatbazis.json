@@ -4,6 +4,7 @@
     "name" : "uj_tabla",
     "attributes" : [ {
       "name" : "ID",
+      "dataType" : null,
       "refTable" : "",
       "refColumn" : "",
       "pk" : true,
