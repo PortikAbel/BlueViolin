@@ -34,6 +34,7 @@ public class Json {
 
                 JSONObject jsonObject = (JSONObject)obj;
 
+                fileReader.close();
                 Database database = new Database(jsonObject);
                 databases.add(database);
             }
@@ -41,7 +42,18 @@ public class Json {
         return databases;
     }
 
-    public static void saveDatabases(List<Database> databases) throws IOException {
+    public static void saveDatabases(List<Database> databases) throws IOException, DatabaseExceptions.UnsuccesfulDeleteException {
+        File dir = new File(".\\");
+        File[] filesInDir = dir.listFiles();
+        assert filesInDir != null;
+        for (File file : filesInDir){
+            if(file.toString().contains(".json"))
+            {
+                if(!file.delete()){
+                    throw(new DatabaseExceptions.UnsuccesfulDeleteException("Saving failed"));
+                }
+            }
+        }
         for (Database database : databases) {
             String filename = database.getName() + ".json";
             FileWriter file = new FileWriter(filename);
