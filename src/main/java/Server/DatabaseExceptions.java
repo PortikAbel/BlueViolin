@@ -19,9 +19,4 @@ public class DatabaseExceptions {
             super(errormsg);
         }
     }
-    public static class DatabaseNotExistsException extends Exception{
-        public DatabaseNotExistsException(String errormsg) {
-            super(errormsg);
-        }
-    }
 }
