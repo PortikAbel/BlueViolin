@@ -59,7 +59,6 @@ public class Json {
             FileWriter file = new FileWriter(filename);
             file.write(nodeToString(database));
             file.close();
-            System.out.println(nodeToString(database));
         }
     }
 

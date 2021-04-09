@@ -40,17 +40,19 @@ public class Main {
 
         try{
             CommandProcessor commandProcessor = new CommandProcessor();
-            commandProcessor.processCommand("create database University");
-            commandProcessor.processCommand("USE University");
+            commandProcessor.processCommand("delete database University;");
+            commandProcessor.processCommand("create database University;");
+            commandProcessor.processCommand("USE University;");
 
             commandProcessor.processCommand("CREATE TABLE disciplines (\n" +
                     "  DiscID varchar(5) PRIMARY KEY,\n" +
                     "  DName varchar(30),\n" +
                     "  CreditNr int\n" +
                     ");");
+            commandProcessor.processCommand("insert into disciplines (DiscID,DName,CreditNr) values ('DB1','Databases 1', 7);");
             Json.saveDatabases(commandProcessor.getDatabases());
 
-        } catch (IOException | DatabaseExceptions.UnknownCommandException | DatabaseExceptions.DataDefinitionException | DatabaseExceptions.UnsuccesfulDeleteException | DatabaseExceptions.DatabaseNotExistsException e) {
+        } catch (IOException | DatabaseExceptions.UnknownCommandException | DatabaseExceptions.DataDefinitionException | DatabaseExceptions.UnsuccesfulDeleteException e) {
             e.printStackTrace();
         }
 
