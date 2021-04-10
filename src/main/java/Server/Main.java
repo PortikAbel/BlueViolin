@@ -2,7 +2,10 @@ package Server;
 
 import org.json.simple.parser.ParseException;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -21,22 +24,41 @@ public class Main {
             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
-            String inputLine;
+            char[] buffer = new char[1024];
+            String msg, inputLine;
+            StringBuilder msgBuilder;
             System.out.println("server started");
 
-            while ((inputLine = in.readLine()) != null) {
-                System.out.println(inputLine);
-                try {
-                    if (inputLine.equals("exit")) {
-                        System.out.println("bye");
-                        out.println("bye");
-                        Json.saveDatabases(commandProcessor.getDatabases());
+            mainWhile:
+            while (true) {
+                /*
+                int len = Integer.parseInt(in.readLine());
+                while (len > 0) {
+                    len -= in.read(buffer, 0, Math.min(1024, len));
+                    msgBuilder.append(String.valueOf(buffer));
+                }
+                 */
+                msgBuilder = new StringBuilder();
+                while (!(inputLine = in.readLine()).equals("")) {
+                    msgBuilder.append(inputLine);
+                }
+                msg = msgBuilder.toString();
+
+                for (String command : msg.split(";")) {
+                    if ("".equals(command))
                         break;
+                    try {
+                        if (command.equals("exit")) {
+                            System.out.println("bye");
+                            out.println("bye");
+                            Json.saveDatabases(commandProcessor.getDatabases());
+                            break mainWhile;
+                        }
+                        commandProcessor.processCommand(command);
+                        out.println("OK");
+                    } catch (DatabaseExceptions.DataDefinitionException | DatabaseExceptions.UnsuccesfulDeleteException | DatabaseExceptions.UnknownCommandException e) {
+                        out.println(e.getMessage());
                     }
-                    commandProcessor.processCommand(inputLine);
-                    out.println("OK");
-                } catch ( DatabaseExceptions.DataDefinitionException | DatabaseExceptions.UnsuccesfulDeleteException | DatabaseExceptions.UnknownCommandException e) {
-                    out.println(e.getMessage());
                 }
             }
 
