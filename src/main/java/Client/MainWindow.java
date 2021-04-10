@@ -28,12 +28,9 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.URL;
-import java.sql.SQLOutput;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class MainWindow implements Initializable {
     private BufferedReader serverToClientReader;
@@ -86,15 +83,19 @@ public class MainWindow implements Initializable {
         treeView.setOnMouseClicked(new MouseEventHandler());
     }
 
-    public void send(String msg){
+    public String send(String msg){
+        //clientToServerWriter.println(msg.length());
         clientToServerWriter.println(msg);
-    }
-    public String receive() {
+        clientToServerWriter.println("");
+        System.out.println("Message sent: "+msg);
+        String resp;
         try {
-            return serverToClientReader.readLine();
+            resp = serverToClientReader.readLine();
         } catch (IOException e) {
-            return "";
+            resp = "";
         }
+        System.out.println("Got response: "+resp);
+        return resp;
     }
 
     public void exitApplication() {
@@ -103,29 +104,23 @@ public class MainWindow implements Initializable {
 
     public void addDatabase(String name) {
         // CREATE DATABASE -database name-
-        send("CREATE DATABASE " + name);
-        String ans = receive();
-        if (ans.equals("OK"))
+        String resp = send("CREATE DATABASE " + name);
+        if (resp.equals("OK"))
             selectedItem.getChildren().add(new TreeItem<>(name));
         else
-            System.out.println(ans);
+            System.out.println(resp);
     }
 
     private void deleteDatabase(TreeItem<String> database) {
         // DELETE DATABASE -database name-
-        send("DELETE DATABASE " + database.getValue());
-        String ans = receive();
-        if (ans.equals("OK"))
+        String resp = send("DELETE DATABASE " + database.getValue());
+        if (resp.equals("OK"))
             database.getParent().getChildren().remove(database);
         else
-            System.out.println(ans);
+            System.out.println(resp);
     }
 
     public void addTable(String name, ObservableList<Attribute> attributes) {
-        send(String.format("USE DATABASE %s;", selectedItem.getValue()));
-        String ans = receive();
-        if (!ans.equals("OK"))
-            System.out.println(ans);
         //System.out.printf("USE DATABASE %s;%n", selectedItem.getValue());
 
         // CREATE TABLE -table name- (
@@ -155,26 +150,22 @@ public class MainWindow implements Initializable {
         );
 
         command += "\n);";
-        send(command);
-        System.out.println(command);
-
-        ans = receive();
-        if (ans.equals("OK"))
+        String resp = send(command);
+        if (resp.equals("OK"))
             selectedItem.getChildren().add(new TreeItem<>(name));
         else
-            System.out.println(ans);
+            System.out.println(resp);
     }
 
     private void deleteTable(TreeItem<String> table) {
-        send("DELETE TABLE " + table.getValue()
+        String resp = send("DELETE TABLE " + table.getValue()
                 + " " + table.getParent().getValue()
         );
 
-        String ans = receive();
-        if (ans.equals("OK"))
+        if (resp.equals("OK"))
             table.getParent().getChildren().remove(table);
         else
-            System.out.println(ans);
+            System.out.println(resp);
     }
 
     public void insertRows(ObservableList<ObservableList<SimpleStringProperty>> rows) {
@@ -194,7 +185,7 @@ public class MainWindow implements Initializable {
     }
 
     public void createIndex(String indexName, String columnNames) {
-        send(String.format("CREATE INDEX %s ON %s(%s)",
+        String resp = send(String.format("CREATE INDEX %s ON %s(%s)",
                 indexName,
                 selectedItem.getValue(),
                 columnNames)
@@ -203,6 +194,7 @@ public class MainWindow implements Initializable {
                 indexName,
                 selectedItem.getValue(),
                 columnNames);
+        System.out.println(resp);
     }
 
     private class MouseEventHandler implements EventHandler<MouseEvent>
@@ -239,7 +231,9 @@ public class MainWindow implements Initializable {
                 else if (selectedItem.getParent().getValue().equals("databases")) {
                     if (!selectedDatabase.equals(selectedItem.getValue())) {
                         selectedDatabase = selectedItem.getValue();
-                        send(String.format("USE %s;", selectedDatabase));
+                        String resp = send(String.format("USE %s;", selectedDatabase));
+                        if (!resp.equals("OK"))
+                            System.out.println(resp);
                     }
                     MenuItem deleteDatabaseOption = new MenuItem("delete database");
                     deleteDatabaseOption.setOnAction( actionEvent -> deleteDatabase(selectedItem));
@@ -265,7 +259,9 @@ public class MainWindow implements Initializable {
                 else {
                     if (!selectedDatabase.equals(selectedItem.getParent().getValue())) {
                         selectedDatabase = selectedItem.getParent().getValue();
-                        send(String.format("USE %s;", selectedDatabase));
+                        String resp = send(String.format("USE %s;", selectedDatabase));
+                        if (!resp.equals("OK"))
+                            System.out.println(resp);
                     }
 
                     MenuItem deleteTableOption = new MenuItem("delete table");
