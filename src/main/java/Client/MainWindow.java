@@ -28,6 +28,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.URL;
+import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -97,28 +98,35 @@ public class MainWindow implements Initializable {
     }
 
     public void exitApplication() {
-        System.out.println("exiting");
         send("exit");
-        System.out.println(receive());
     }
 
     public void addDatabase(String name) {
         // CREATE DATABASE -database name-
         send("CREATE DATABASE " + name);
-        System.out.println("CREATE DATABASE " + name);
-        selectedItem.getChildren().add(new TreeItem<>(name));
+        String ans = receive();
+        if (ans.equals("OK"))
+            selectedItem.getChildren().add(new TreeItem<>(name));
+        else
+            System.out.println(ans);
     }
 
     private void deleteDatabase(TreeItem<String> database) {
         // DELETE DATABASE -database name-
         send("DELETE DATABASE " + database.getValue());
-        System.out.println("DELETE DATABASE " + database.getValue());
-        database.getParent().getChildren().remove(database);
+        String ans = receive();
+        if (ans.equals("OK"))
+            database.getParent().getChildren().remove(database);
+        else
+            System.out.println(ans);
     }
 
     public void addTable(String name, ObservableList<Attribute> attributes) {
-        //send(String.format("USE DATABASE %s;", selectedItem.getValue()));
-        System.out.printf("USE DATABASE %s;%n", selectedItem.getValue());
+        send(String.format("USE DATABASE %s;", selectedItem.getValue()));
+        String ans = receive();
+        if (!ans.equals("OK"))
+            System.out.println(ans);
+        //System.out.printf("USE DATABASE %s;%n", selectedItem.getValue());
 
         // CREATE TABLE -table name- (
         //  -column name- -column type- -NOT NULL- -UNIQUE- -FOREIGN KEY REFERENCES table_name(column_name)-,
@@ -147,20 +155,26 @@ public class MainWindow implements Initializable {
         );
 
         command += "\n);";
-        //send(command);
+        send(command);
         System.out.println(command);
 
-        selectedItem.getChildren().add(new TreeItem<>(name));
+        ans = receive();
+        if (ans.equals("OK"))
+            selectedItem.getChildren().add(new TreeItem<>(name));
+        else
+            System.out.println(ans);
     }
 
     private void deleteTable(TreeItem<String> table) {
         send("DELETE TABLE " + table.getValue()
                 + " " + table.getParent().getValue()
         );
-        System.out.println("DELETE TABLE " + table.getValue()
-                + " " + table.getParent().getValue()
-        );
-        table.getParent().getChildren().remove(table);
+
+        String ans = receive();
+        if (ans.equals("OK"))
+            table.getParent().getChildren().remove(table);
+        else
+            System.out.println(ans);
     }
 
     public void insertRows(ObservableList<ObservableList<SimpleStringProperty>> rows) {
@@ -180,11 +194,15 @@ public class MainWindow implements Initializable {
     }
 
     public void createIndex(String indexName, String columnNames) {
-        System.out.println(String.format("CREATE INDEX %s ON %s(%s)",
+        send(String.format("CREATE INDEX %s ON %s(%s)",
                 indexName,
                 selectedItem.getValue(),
                 columnNames)
         );
+        System.out.printf("CREATE INDEX %s ON %s(%s)%n",
+                indexName,
+                selectedItem.getValue(),
+                columnNames);
     }
 
     private class MouseEventHandler implements EventHandler<MouseEvent>
