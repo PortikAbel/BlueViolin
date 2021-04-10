@@ -19,8 +19,10 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="BlueViolin" />
-        <module name="teszt" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="teszt" target="14" />
+    </bytecodeTargetLevel>
   </component>
 </project>
