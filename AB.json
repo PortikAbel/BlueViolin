@@ -1,0 +1,27 @@
+{
+  "name" : "AB",
+  "tables" : [ {
+    "name" : "AB_tabla",
+    "attributes" : [ {
+      "name" : "adfh",
+      "dataType" : null,
+      "refTable" : "",
+      "refColumn" : "",
+      "pk" : true,
+      "fk" : false,
+      "notNull" : true,
+      "unique" : true,
+      "index" : false
+    }, {
+      "name" : "ghgg",
+      "dataType" : null,
+      "refTable" : "",
+      "refColumn" : "",
+      "pk" : false,
+      "fk" : false,
+      "notNull" : false,
+      "unique" : true,
+      "index" : false
+    } ]
+  } ]
+}
