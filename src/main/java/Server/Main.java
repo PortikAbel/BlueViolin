@@ -3,12 +3,14 @@ package Server;
 import org.json.simple.parser.ParseException;
 
 import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 public class Main {
 
     public static void main(String[] args) throws ParseException {
 
-        /* for the client
+        /* for the client*/
         int portNumber = 4242;
 
         try {
@@ -24,20 +26,25 @@ public class Main {
 
             while ((inputLine = in.readLine()) != null) {
                 System.out.println(inputLine);
-                if (inputLine.equals("exit")) {
-                    System.out.println("bye");
-                    out.println("bye");
-                    Json.saveDatabases(commandProcessor.getDatabases());
-                    break;
+                try {
+                    if (inputLine.equals("exit")) {
+                        System.out.println("bye");
+                        out.println("bye");
+                        Json.saveDatabases(commandProcessor.getDatabases());
+                        break;
+                    }
+                    commandProcessor.processCommand(inputLine);
+                    out.println("OK");
+                } catch ( DatabaseExceptions.DataDefinitionException | DatabaseExceptions.UnsuccesfulDeleteException | DatabaseExceptions.UnknownCommandException e) {
+                    out.println(e.getMessage());
                 }
-                commandProcessor.processCommand(inputLine);
-                out.println("OK");
             }
 
-        } catch (IOException | DatabaseExceptions.DataDefinitionException | DatabaseExceptions.UknownCommandException e) {
+        } catch (IOException e) {
             e.printStackTrace();
-        }*/
+        }
 
+        /*
         try{
             CommandProcessor commandProcessor = new CommandProcessor();
             commandProcessor.processCommand("delete database University;");
@@ -55,6 +62,6 @@ public class Main {
         } catch (IOException | DatabaseExceptions.UnknownCommandException | DatabaseExceptions.DataDefinitionException | DatabaseExceptions.UnsuccesfulDeleteException e) {
             e.printStackTrace();
         }
-
+         */
     }
 }
