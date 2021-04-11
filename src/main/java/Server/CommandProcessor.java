@@ -2,10 +2,11 @@ package Server;
 
 import org.json.simple.parser.ParseException;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class CommandProcessor {
@@ -24,10 +25,12 @@ public class CommandProcessor {
     }
 
     public void processCommand(String command) throws DatabaseExceptions.DataDefinitionException, DatabaseExceptions.UnknownCommandException, DatabaseExceptions.UnsuccesfulDeleteException {
-        if(Character.compare(command.charAt(command.length() - 1),';') == 0){
+        /*if(Character.compare(command.charAt(command.length() - 1),';') == 0){
             command = command.substring(0, command.length()-1);
-        }
-        String[] dividedCommand = command.split(" ");
+        }*/
+        command = command.replace("\n","");
+        command = command.replace("\t", " ");
+        String[] dividedCommand = command.split("\\s+");
         switch (dividedCommand[0].toUpperCase()) {
             case "CREATE":
                 create(command);
@@ -51,7 +54,7 @@ public class CommandProcessor {
         // CREATE TABLE -table name- (
         //  -column name- -column type- -NOT NULL- -UNIQUE- -REFERENCES table_name(column_name)-,
         //  );
-        String[] dividedCommand = command.split(" ");
+        String[] dividedCommand = command.split("\\s+");
         switch (dividedCommand[1].toUpperCase()){
             case "DATABASE":
                 if(databases.stream().noneMatch(o ->o.getName().equals(dividedCommand[2]))) {
@@ -64,19 +67,55 @@ public class CommandProcessor {
             case "TABLE":
                 if(usedDatabase.getTables().stream().noneMatch(o -> o.getName().equals(dividedCommand[2]))){
                     Table newTable = new Table(dividedCommand[2]);
+
+                    Pattern columnsPattern = Pattern.compile("^CREATE[\\s]+TABLE[\\s]+[a-zA-Z0-9_]+[\\s]+\\((.*)\\);?$");
+                    Matcher columnsMatcher = columnsPattern.matcher(command);
+                    if (columnsMatcher.find())
+                    {
+                        Pattern columnPattern = Pattern.compile("([^(),]+(\\([^()]*\\)[^(),]*)?),?");
+                        Matcher columnMatcher = columnPattern.matcher(columnsMatcher.group(1));
+                        while (columnMatcher.find()) {
+                            String commandRow = columnMatcher.group(1).replace("^\\s+", "");
+                            String[] columnDef = commandRow.split("\\s+");
+                            if(columnDef[0].equalsIgnoreCase("PRIMARY")){
+                                Pattern pkPattern = Pattern.compile("^PRIMARY[\\s]+KEY[\\s]*\\((.*)\\),?$");
+                                Matcher pkMatcher = pkPattern.matcher(commandRow);
+                                if (pkMatcher.find())
+                                {
+                                    String pks = pkMatcher.group(1);
+                                    for (String pk : pks.split(",")) {
+                                        Attribute currentAttribute = newTable.getAttributes().stream()
+                                                .filter(o -> o.getName().equals(pk)).findAny().orElse(null);
+                                        assert currentAttribute != null;
+                                        currentAttribute.setPk(true);
+                                    }
+                                }
+                            }
+                            else{
+                                if(newTable.getAttributes().stream().noneMatch(o -> o.getName().equals(columnDef[0]))) {
+                                    newTable.addAttribute(new Attribute(columnDef));
+                                }
+                                else{
+                                    throw (new DatabaseExceptions.DataDefinitionException("Column already exist in this table: " + columnDef[0]));
+                                }
+                            }
+                        }
+                    }
+                    usedDatabase.addTable(newTable);
+                    /*
                     String columns = command.split("\\(", 2)[1].replace("\n", "");
-                    String[] columnsSeparated = columns.substring(0, columns.length()-2).split(",");
+                    String[] columnsSeparated = columns.substring(0, columns.length()-1).split(",");
                     for(String column : columnsSeparated){
-                        String[] parameter = column.replaceFirst("^\\s*", "").split(" ");
+                        column = column.replaceFirst("^\\s*", "");
+                        String[] parameter = column.split(" ");
                         if(parameter[0].toUpperCase().equals("PRIMARY")){
-                            int i = 2;
-                            while(i < parameter.length){
-                                int finalI = i;
+                            String primaryKeys = column.split("\\(", 2)[1].replace("\n", "");
+                            String[] primaryKeysSeparated = primaryKeys.substring(0, primaryKeys.length()-1).split(",");
+                            for (String pk : primaryKeysSeparated){
                                 Attribute currentAttribute = newTable.getAttributes().stream()
-                                        .filter(o -> o.getName().equals(parameter[finalI])).findAny().orElse(null);
+                                        .filter(o -> o.getName().equals(pk)).findAny().orElse(null);
                                 assert currentAttribute != null;
                                 currentAttribute.setPk(true);
-                                i++;
                             }
                         }
                         else{
@@ -89,6 +128,8 @@ public class CommandProcessor {
                         }
                     }
                     usedDatabase.addTable(newTable);
+
+                     */
                 }
                 else{
                     throw (new DatabaseExceptions.DataDefinitionException("Table already exist in this database: " + dividedCommand[2]));
