@@ -1,4 +1,40 @@
 {
   "name" : "proba_ab",
-  "tables" : [ ]
+  "tables" : [ {
+    "name" : "ize",
+    "attributes" : [ {
+      "name" : "id",
+      "dataType" : "UNIQUE",
+      "refTable" : null,
+      "refColumn" : null,
+      "pk" : true,
+      "fk" : false,
+      "notNull" : false,
+      "unique" : false,
+      "index" : false
+    } ]
+  }, {
+    "name" : "vasarlasok",
+    "attributes" : [ {
+      "name" : "EladoID",
+      "dataType" : "int",
+      "refTable" : null,
+      "refColumn" : null,
+      "pk" : true,
+      "fk" : false,
+      "notNull" : true,
+      "unique" : false,
+      "index" : false
+    }, {
+      "name" : "VevoID",
+      "dataType" : "int",
+      "refTable" : null,
+      "refColumn" : null,
+      "pk" : true,
+      "fk" : false,
+      "notNull" : true,
+      "unique" : false,
+      "index" : false
+    } ]
+  } ]
 }

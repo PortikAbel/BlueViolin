@@ -12,8 +12,7 @@ import java.net.Socket;
 public class Main {
 
     public static void main(String[] args) throws ParseException {
-
-        /* for the client*/
+        // for the client
         int portNumber = 4242;
 
         try {
@@ -31,13 +30,6 @@ public class Main {
 
             mainWhile:
             while (true) {
-                /*
-                int len = Integer.parseInt(in.readLine());
-                while (len > 0) {
-                    len -= in.read(buffer, 0, Math.min(1024, len));
-                    msgBuilder.append(String.valueOf(buffer));
-                }
-                 */
                 msgBuilder = new StringBuilder();
                 while (!(inputLine = in.readLine()).equals("")) {
                     msgBuilder.append(inputLine);
@@ -51,10 +43,10 @@ public class Main {
                         if (command.equals("exit")) {
                             System.out.println("bye");
                             out.println("bye");
-                            Json.saveDatabases(commandProcessor.getDatabases());
                             break mainWhile;
                         }
                         commandProcessor.processCommand(command);
+                        Json.saveDatabases(commandProcessor.getDatabases());
                         out.println("OK");
                     } catch (DatabaseExceptions.DataDefinitionException | DatabaseExceptions.UnsuccesfulDeleteException | DatabaseExceptions.UnknownCommandException e) {
                         out.println(e.getMessage());
@@ -66,7 +58,7 @@ public class Main {
             e.printStackTrace();
         }
 
-        /*
+/*
         try{
             CommandProcessor commandProcessor = new CommandProcessor();
             commandProcessor.processCommand("delete database University;");
@@ -84,6 +76,6 @@ public class Main {
         } catch (IOException | DatabaseExceptions.UnknownCommandException | DatabaseExceptions.DataDefinitionException | DatabaseExceptions.UnsuccesfulDeleteException e) {
             e.printStackTrace();
         }
-         */
+*/
     }
 }

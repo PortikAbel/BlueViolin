@@ -131,6 +131,7 @@ public class MainWindow implements Initializable {
         command += " (\n";
         command += attributes.stream().map(attribute -> {
             String attrDef = attribute.getName();
+            attrDef += " " + attribute.getDataType();
             if (attribute.isNotNull())
                 attrDef += " NOT NULL";
             if (attribute.isUnique())
