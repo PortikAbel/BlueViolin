@@ -120,8 +120,6 @@ public class MainWindow implements Initializable {
     }
 
     public void addTable(String name, ObservableList<Attribute> attributes) {
-        //System.out.printf("USE DATABASE %s;%n", selectedItem.getValue());
-
         // CREATE TABLE -table name- (
         //  -column name- -column type- -NOT NULL- -UNIQUE- -FOREIGN KEY REFERENCES table_name(column_name)-,
         //  );
@@ -169,19 +167,19 @@ public class MainWindow implements Initializable {
     }
 
     public void insertRows(ObservableList<ObservableList<SimpleStringProperty>> rows) {
-        String command = String.format("INSERT INTO %s VALUES %s;",
-                selectedItem.getValue(),
-                rows.stream().map(
-                        row -> String.format("(%s)", row.stream()
-                                .map(SimpleStringProperty::getValue)
-                                .collect(Collectors.joining(","))
-                        )
-                )
-                .collect(Collectors.joining(",\n"))
-        );
-
-        //send(command);
-        System.out.println(command);
+        rows.forEach(row -> {
+            String resp = send(String.format(
+                    "INSERT INTO %s VALUES %s;",
+                    selectedItem.getValue(),
+                    String.format("(%s)",
+                            row.stream()
+                                    .map(SimpleStringProperty::getValue)
+                                    .collect(Collectors.joining(","))
+                    ))
+            );
+            if (!resp.equals("OK"))
+                System.out.println(resp);
+        });
     }
 
     public void createIndex(String indexName, String columnNames) {

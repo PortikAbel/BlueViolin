@@ -29,7 +29,8 @@ public class CommandProcessor {
             throws DbExceptions.DataDefinitionException,
             DbExceptions.UnknownCommandException,
             DbExceptions.UnsuccessfulDeleteException,
-            DbExceptions.DataManipulationException
+            DbExceptions.DataManipulationException,
+            IOException
     {
         String[] dividedCommand = command.split(" ");
         switch (dividedCommand[0].toUpperCase()) {
@@ -44,6 +45,7 @@ public class CommandProcessor {
                     default:
                         throw new DbExceptions.UnknownCommandException();
                 }
+                Json.saveDatabases(databases);
                 break;
             case "DELETE":
                 switch (dividedCommand[1].toUpperCase()) {
@@ -56,6 +58,7 @@ public class CommandProcessor {
                     default:
                         throw new DbExceptions.UnknownCommandException();
                 }
+                Json.saveDatabases(databases);
                 break;
             case "INSERT":
                 insert(command);
@@ -81,11 +84,11 @@ public class CommandProcessor {
         // CREATE TABLE -table name- (
         //  -column name- -column type- -NOT NULL- -UNIQUE- -REFERENCES table_name(column_name)-,
         //  );
-        Pattern createTablePattern = Pattern.compile("^CREATE TABLE ([a-zA-Z0-9_]+)\\((.+)\\)$");
+        Pattern createTablePattern = Pattern.compile("^CREATE TABLE ([a-zA-Z0-9_]+)\\((.+)\\)$", Pattern.CASE_INSENSITIVE);
         Matcher createTableMatcher = createTablePattern.matcher(command);
 
-        Pattern pkPattern = Pattern.compile("^PRIMARY KEY\\((.+)\\)");
-        Pattern fkPattern = Pattern.compile("REFERENCES ([^()]+)\\(([^()]+)\\)");
+        Pattern pkPattern = Pattern.compile("^PRIMARY KEY\\((.+)\\)", Pattern.CASE_INSENSITIVE);
+        Pattern fkPattern = Pattern.compile("REFERENCES ([^()]+)\\(([^()]+)\\)", Pattern.CASE_INSENSITIVE);
         Matcher pkMatcher, fkMatcher;
 
         if (createTableMatcher.find()) {
@@ -173,7 +176,9 @@ public class CommandProcessor {
     }
 
     private void insert(String command) throws DbExceptions.DataManipulationException {
-        Pattern insertPattern = Pattern.compile("INSERT INTO ([a-zA-Z0-9_]+)(\\(([^()]+)\\))? VALUES\\(([^()]+)\\)");
+        Pattern insertPattern = Pattern.compile(
+                "INSERT INTO ([a-zA-Z0-9_]+)[ ]?(\\(([^()]+)\\))?VALUES\\(([^()]+)\\)",
+                Pattern.CASE_INSENSITIVE);
         Matcher insertMatcher = insertPattern.matcher(command);
         String tableName, intoCols, values;
         if(insertMatcher.find()) {
@@ -205,8 +210,6 @@ public class CommandProcessor {
         List<String> valuesToInsert = new ArrayList<>();
         List<String> keysToInsert = new ArrayList<>();
 
-        int nrOfValues = 0, nrOfPKs = 0;
-
         for (Attribute attribute : currentTable.getAttributes())
         {
             int i = intoColumn.indexOf(attribute.getName());
@@ -230,7 +233,9 @@ public class CommandProcessor {
                         throw new DbExceptions.DataManipulationException(
                                 "Bool expected for attribute " + attribute.getName());*/
                 } else {
-                    Matcher varcharTypeMatcher = Pattern.compile("VARCHAR\\(([0-9]+)\\)").matcher(attribute.getDataType());
+                    Matcher varcharTypeMatcher = Pattern
+                            .compile("VARCHAR\\(([0-9]+)\\)", Pattern.CASE_INSENSITIVE)
+                            .matcher(attribute.getDataType());
                     Matcher varcharValueMatcher = Pattern.compile("[\"']([^\"'])[\"']").matcher(val);
                     if (!varcharTypeMatcher.find()) {
                         throw new DbExceptions.DataManipulationException(
