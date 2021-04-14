@@ -8,26 +8,12 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Main {
 
     public static void main(String[] args) throws ParseException {
         // for the client
         int portNumber = 4242;
-
-        String insert = "INSERT INTO tabla(mezo1,mezo2) VALUES(ertek1,ertek2)";
-        String insert2 = "INSERT INTO tabla VALUES(ertek1,ertek2)";
-        Pattern insertPattern = Pattern.compile("INSERT INTO ([a-zA-Z0-9_]+)(\\(([^()]+)\\))? VALUES\\(([^()]+)\\)");
-        Matcher m1 = insertPattern.matcher(insert);
-        Matcher m2 = insertPattern.matcher(insert2);
-        if (m1.find() && m2.find())
-            for(int i = 1; i <= 4; i++)
-            {
-                System.out.println(m1.group(i));
-                System.out.println(m2.group(i));
-            }
 
         try {
             ServerSocket serverSocket = new ServerSocket(portNumber);
@@ -60,7 +46,6 @@ public class Main {
                     }
                     try {
                         commandProcessor.processCommand(command);
-                        Json.saveDatabases(commandProcessor.getDatabases());
                         out.println("OK");
                     }
                     catch (DbExceptions.DataDefinitionException |

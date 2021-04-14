@@ -70,14 +70,20 @@ public class InsertRowsWindow implements Initializable {
             TableColumn<ObservableList<SimpleStringProperty>, String> newColumn = new TableColumn<>();
             newColumn.setText(attribute.getName());
             newColumn.setEditable(true);
-            setCellValueFactory(newColumn, i);
+            setCellValueFactory(newColumn, i, attribute.getDataType().equalsIgnoreCase("int"));
             tableOfAttributes.getColumns().add(newColumn);
         }
     }
 
-    private void setCellValueFactory(TableColumn<ObservableList<SimpleStringProperty>, String> column, final int index)
+    private void setCellValueFactory(TableColumn<ObservableList<SimpleStringProperty>, String> column,
+                                     final int index, final boolean integer)
     {
-        column.setCellValueFactory(row -> row.getValue().get(index));
+        column.setCellValueFactory(observableListString -> {
+            if (integer)
+                return observableListString.getValue().get(index);
+            else
+                return new SimpleStringProperty("'" + observableListString.getValue().get(index).getValue() + "'");
+        });
     }
 
     public void setMainWindow(MainWindow mainWindow){
