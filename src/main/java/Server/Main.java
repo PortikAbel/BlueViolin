@@ -48,7 +48,12 @@ public class Main {
                         commandProcessor.processCommand(command);
                         Json.saveDatabases(commandProcessor.getDatabases());
                         out.println("OK");
-                    } catch (DatabaseExceptions.DataDefinitionException | DatabaseExceptions.UnsuccesfulDeleteException | DatabaseExceptions.UnknownCommandException e) {
+                    }
+                    catch (DbExceptions.DataDefinitionException |
+                            DbExceptions.UnsuccessfulDeleteException |
+                            DbExceptions.UnknownCommandException |
+                            DbExceptions.DataManipulationException e
+                    ) {
                         out.println(e.getMessage());
                     }
                 }

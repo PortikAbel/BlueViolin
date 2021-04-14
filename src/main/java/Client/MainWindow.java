@@ -84,7 +84,6 @@ public class MainWindow implements Initializable {
     }
 
     public String send(String msg){
-        //clientToServerWriter.println(msg.length());
         clientToServerWriter.println(msg);
         clientToServerWriter.println("");
         System.out.println("Message sent: "+msg);
