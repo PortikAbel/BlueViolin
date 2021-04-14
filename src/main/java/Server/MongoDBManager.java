@@ -5,8 +5,6 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 
-import java.util.concurrent.CountDownLatch;
-
 public class MongoDBManager {
     private final MongoClient mongoClient;
     private MongoDatabase currentDatabase = null;

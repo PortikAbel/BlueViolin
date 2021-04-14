@@ -24,13 +24,12 @@ public class CommandProcessor {
         return databases;
     }
 
-    public void processCommand(String command) throws DatabaseExceptions.DataDefinitionException, DatabaseExceptions.UnknownCommandException, DatabaseExceptions.UnsuccesfulDeleteException {
-        /*if(Character.compare(command.charAt(command.length() - 1),';') == 0){
-            command = command.substring(0, command.length()-1);
-        }*/
-        command = command.replace("\n","");
-        command = command.replace("\t", " ");
-        String[] dividedCommand = command.split("\\s+");
+    public void processCommand(String command)
+            throws DatabaseExceptions.DataDefinitionException,
+            DatabaseExceptions.UnknownCommandException,
+            DatabaseExceptions.UnsuccesfulDeleteException
+    {
+        String[] dividedCommand = command.split(" ");
         switch (dividedCommand[0].toUpperCase()) {
             case "CREATE":
                 create(command);
@@ -68,7 +67,7 @@ public class CommandProcessor {
                 if(usedDatabase.getTables().stream().noneMatch(o -> o.getName().equals(dividedCommand[2]))){
                     Table newTable = new Table(dividedCommand[2]);
 
-                    Pattern columnsPattern = Pattern.compile("^CREATE[\\s]+TABLE[\\s]+[a-zA-Z0-9_]+[\\s]+\\((.*)\\);?$");
+                    Pattern columnsPattern = Pattern.compile("^CREATE TABLE [a-zA-Z0-9_]\\((.*)\\)$");
                     Matcher columnsMatcher = columnsPattern.matcher(command);
                     if (columnsMatcher.find())
                     {
@@ -102,34 +101,6 @@ public class CommandProcessor {
                         }
                     }
                     usedDatabase.addTable(newTable);
-                    /*
-                    String columns = command.split("\\(", 2)[1].replace("\n", "");
-                    String[] columnsSeparated = columns.substring(0, columns.length()-1).split(",");
-                    for(String column : columnsSeparated){
-                        column = column.replaceFirst("^\\s*", "");
-                        String[] parameter = column.split(" ");
-                        if(parameter[0].toUpperCase().equals("PRIMARY")){
-                            String primaryKeys = column.split("\\(", 2)[1].replace("\n", "");
-                            String[] primaryKeysSeparated = primaryKeys.substring(0, primaryKeys.length()-1).split(",");
-                            for (String pk : primaryKeysSeparated){
-                                Attribute currentAttribute = newTable.getAttributes().stream()
-                                        .filter(o -> o.getName().equals(pk)).findAny().orElse(null);
-                                assert currentAttribute != null;
-                                currentAttribute.setPk(true);
-                            }
-                        }
-                        else{
-                            if(newTable.getAttributes().stream().noneMatch(o -> o.getName().equals(parameter[0]))) {
-                                newTable.addAttribute(new Attribute(parameter));
-                            }
-                            else{
-                                throw (new DatabaseExceptions.DataDefinitionException("Column already exist in this table: " + parameter[0]));
-                            }
-                        }
-                    }
-                    usedDatabase.addTable(newTable);
-
-                     */
                 }
                 else{
                     throw (new DatabaseExceptions.DataDefinitionException("Table already exist in this database: " + dividedCommand[2]));
