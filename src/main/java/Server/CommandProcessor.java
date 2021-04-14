@@ -3,8 +3,8 @@ package Server;
 import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -81,11 +81,11 @@ public class CommandProcessor {
         // CREATE TABLE -table name- (
         //  -column name- -column type- -NOT NULL- -UNIQUE- -REFERENCES table_name(column_name)-,
         //  );
-        Pattern createTablePattern = Pattern.compile("^CREATE TABLE ([a-zA-Z0-9_])\\((.+)\\)$");
+        Pattern createTablePattern = Pattern.compile("^CREATE TABLE ([a-zA-Z0-9_]+)\\((.+)\\)$");
         Matcher createTableMatcher = createTablePattern.matcher(command);
 
         Pattern pkPattern = Pattern.compile("^PRIMARY KEY\\((.+)\\)");
-        Pattern fkPattern = Pattern.compile("REFERENCES ([^()]+)\\(([^()])\\)");
+        Pattern fkPattern = Pattern.compile("REFERENCES ([^()]+)\\(([^()]+)\\)");
         Matcher pkMatcher, fkMatcher;
 
         if (createTableMatcher.find()) {
@@ -173,65 +173,110 @@ public class CommandProcessor {
     }
 
     private void insert(String command) throws DbExceptions.DataManipulationException {
-        Matcher regexMatcher = Pattern.compile("\\((.*?)\\)").matcher(command);
-        String columns;
-        if(regexMatcher.find()) {
-            columns = regexMatcher.group(1);
+        Pattern insertPattern = Pattern.compile("INSERT INTO ([a-zA-Z0-9_]+)(\\(([^()]+)\\))? VALUES\\(([^()]+)\\)");
+        Matcher insertMatcher = insertPattern.matcher(command);
+        String tableName, intoCols, values;
+        if(insertMatcher.find()) {
+            tableName = insertMatcher.group(1);
+            intoCols = insertMatcher.group(3);
+            values = insertMatcher.group(4);
         }
         else{
-            throw (new DbExceptions.DataManipulationException("Insert does not found what columns to insert into."));
+            throw new DbExceptions.DataManipulationException("Incorrect insert syntax.");
         }
-        String values;
-        if(regexMatcher.find()) {
-            values = regexMatcher.group(1);
-        }
-        else{
-            throw (new DbExceptions.DataManipulationException("Insert does not found what values to insert."));
-        }
+        
         Table currentTable = usedDatabase.getTables().stream()
-                .filter(o -> o.getName().equals(command.split(" ", 4)[2]))
+                .filter(o -> o.getName().equals(tableName))
                 .findFirst()
                 .orElse(null);
         if(currentTable == null)
-            throw (new DbExceptions.DataManipulationException("Can't insert into table, because table does not exists."));
-        String[] parameters = Arrays.stream(values.split(",")).map(o -> o.replaceFirst("^\\s*", "")).toArray(String[]::new);
-        String[] valuestoInsert = new String[currentTable.getAttributes().size()];
-        Iterator<Attribute> it = currentTable.getAttributes().iterator();
-        int i = 0;
-        int j = 0;
-        while (i < valuestoInsert.length && it.hasNext())
-        {
-            Attribute column = it.next();
-            if(columns.contains(column.getName())) {
-                if ("INT".equalsIgnoreCase(column.getDataType())) {
-                    int number = Integer.parseInt(parameters[j]);
-                } else {
-                    Matcher m = Pattern.compile("\\((.*?)\\)").matcher(column.getDataType());
-                    if (m.find()) {
-                        String num = m.group(1);
-                        if (Integer.parseInt(num) < parameters[j].length() -2)
-                            throw (new DbExceptions.DataManipulationException("The string is too long."));
-                        parameters[j] = parameters[j].substring(1,parameters[j].length()-1);
-                    }
-                }
-                if(column.isUnique()){
-                    if(!mongoDBManager.valueIsUnique(currentTable.getName(),parameters[j],i - 1))
-                        throw (new DbExceptions.DataManipulationException("This field must be unique."));
-                }
+            throw new DbExceptions.DataManipulationException("Can't insert into table, because table does not exists: " + tableName);
 
-                if(column.isNotNull() && parameters[j].equals("null"))
-                    throw (new DbExceptions.DataManipulationException("This field must not be null."));
-                valuestoInsert[i] = parameters[j];
-                j++;
-
-            }else{
-                if(column.isNotNull())
-                    throw (new DbExceptions.DataManipulationException("This field must not be null."));
-                valuestoInsert[i] = "null";
-            }
-            i++;
+        if (intoCols == null) {
+            intoCols = currentTable.getAttributes().stream()
+                    .map(Attribute::getName)
+                    .collect(Collectors.joining(","));
         }
-        mongoDBManager.insert(currentTable.getName(), valuestoInsert[0], Arrays.stream(valuestoInsert).skip(1).collect(Collectors.joining("#")));
+
+        List<String> intoColumn, value;
+        intoColumn = Arrays.asList(intoCols.split(","));
+        value = Arrays.asList(values.split(","));
+
+        List<String> valuesToInsert = new ArrayList<>();
+        List<String> keysToInsert = new ArrayList<>();
+
+        int nrOfValues = 0, nrOfPKs = 0;
+
+        for (Attribute attribute : currentTable.getAttributes())
+        {
+            int i = intoColumn.indexOf(attribute.getName());
+            if (i < 0) {
+                if (attribute.isNotNull())
+                    throw new DbExceptions.DataManipulationException("This field must not be null.");
+                valuesToInsert.add("null");
+            }
+            else {
+                String val = value.get(i);
+                // type check
+                if ("int".equalsIgnoreCase(attribute.getDataType())) {
+                    try {
+                        Integer.parseInt(val);
+                    } catch (NumberFormatException e) {
+                        throw new DbExceptions.DataManipulationException(
+                                "Integer expected for attribute " + attribute.getName());
+                    }
+                /*} else if ("bool".equalsIgnoreCase(attribute.getDataType())) {
+                    if (!"true".equalsIgnoreCase(val) || !"false".equalsIgnoreCase(val))
+                        throw new DbExceptions.DataManipulationException(
+                                "Bool expected for attribute " + attribute.getName());*/
+                } else {
+                    Matcher varcharTypeMatcher = Pattern.compile("VARCHAR\\(([0-9]+)\\)").matcher(attribute.getDataType());
+                    Matcher varcharValueMatcher = Pattern.compile("[\"']([^\"'])[\"']").matcher(val);
+                    if (!varcharTypeMatcher.find()) {
+                        throw new DbExceptions.DataManipulationException(
+                                "Attribute " + attribute.getName() +
+                                        " has unknown datatype:" + attribute.getDataType()
+                        );
+                    }
+                    if (!varcharValueMatcher.find()) {
+                        throw new DbExceptions.DataManipulationException(
+                                "Varchar variable was given incorrectly: " + val
+                        );
+                    }
+                    int maxLen = Integer.parseInt(varcharTypeMatcher.group(1));
+                    String varchar = varcharValueMatcher.group(1);
+                    if (varchar.length() -2 > maxLen)
+                        throw (new DbExceptions.DataManipulationException("The string is too long."));
+                    val = varchar;
+                }
+
+                // unique check
+                if(attribute.isUnique()){
+                    if(!mongoDBManager.valueIsUnique(
+                            currentTable.getName(), val,
+                            attribute.isPk() ? keysToInsert.size() : valuesToInsert.size())
+                    )
+                        throw new DbExceptions.DataManipulationException(
+                                "This field must be unique.");
+                }
+
+                // not null check
+                if(attribute.isNotNull() && val.equalsIgnoreCase("null"))
+                    throw new DbExceptions.DataManipulationException("This field must not be null.");
+
+                // pk check
+                if (attribute.isPk())
+                    keysToInsert.add(val);
+                else
+                    valuesToInsert.add(val);
+            }
+        }
+
+        mongoDBManager.insert(
+                tableName,
+                String.join("#", keysToInsert),
+                String.join("#", valuesToInsert)
+        );
     }
 
     private void use(String databaseName) throws DbExceptions.DataDefinitionException {
