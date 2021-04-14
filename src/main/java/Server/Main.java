@@ -23,7 +23,6 @@ public class Main {
             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
-            char[] buffer = new char[1024];
             String msg, inputLine;
             StringBuilder msgBuilder;
             System.out.println("server started");
@@ -35,16 +34,17 @@ public class Main {
                     msgBuilder.append(inputLine);
                 }
                 msg = msgBuilder.toString();
+                msg = msg.replaceAll("\\s+"," ");
+                msg = msg.replaceAll("(\\s+)?([(),;{}<>=])(\\s+)?","$2");
 
                 for (String command : msg.split(";")) {
                     if ("".equals(command))
                         break;
+                    if (command.equals("exit")) {
+                        out.println("bye");
+                        break mainWhile;
+                    }
                     try {
-                        if (command.equals("exit")) {
-                            System.out.println("bye");
-                            out.println("bye");
-                            break mainWhile;
-                        }
                         commandProcessor.processCommand(command);
                         Json.saveDatabases(commandProcessor.getDatabases());
                         out.println("OK");
