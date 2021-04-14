@@ -42,7 +42,7 @@ public class Json {
         return databases;
     }
 
-    public static void saveDatabases(List<Database> databases) throws IOException, DatabaseExceptions.UnsuccesfulDeleteException {
+    public static void saveDatabases(List<Database> databases) throws IOException, DbExceptions.UnsuccessfulDeleteException {
         File dir = new File(".\\");
         File[] filesInDir = dir.listFiles();
         assert filesInDir != null;
@@ -50,7 +50,7 @@ public class Json {
             if(file.toString().contains(".json"))
             {
                 if(!file.delete()){
-                    throw(new DatabaseExceptions.UnsuccesfulDeleteException("Saving failed"));
+                    throw(new DbExceptions.UnsuccessfulDeleteException("Saving failed"));
                 }
             }
         }

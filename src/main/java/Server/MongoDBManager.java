@@ -20,6 +20,16 @@ public class MongoDBManager {
 
     }
 
+    public boolean valueIsUnique(String tableName, String value, int index){
+        MongoCollection<Document> currentTable = currentDatabase.getCollection(tableName);
+        for (Document document : currentTable.find()) {
+            String field = document.getString("value");
+            if(field.split("#")[index].equals(value))
+                return false;
+        }
+        return true;
+    }
+
     public void use(String databaseName){
         currentDatabase = mongoClient.getDatabase(databaseName);
     }

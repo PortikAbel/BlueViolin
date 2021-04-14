@@ -4,6 +4,7 @@ import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -25,137 +26,220 @@ public class CommandProcessor {
     }
 
     public void processCommand(String command)
-            throws DatabaseExceptions.DataDefinitionException,
-            DatabaseExceptions.UnknownCommandException,
-            DatabaseExceptions.UnsuccesfulDeleteException
+            throws DbExceptions.DataDefinitionException,
+            DbExceptions.UnknownCommandException,
+            DbExceptions.UnsuccessfulDeleteException,
+            DbExceptions.DataManipulationException
     {
         String[] dividedCommand = command.split(" ");
         switch (dividedCommand[0].toUpperCase()) {
             case "CREATE":
-                create(command);
+                switch (dividedCommand[1].toUpperCase()) {
+                    case "DATABASE":
+                        createDatabase(command);
+                        break;
+                    case "TABLE":
+                        createTable(command);
+                        break;
+                    default:
+                        throw new DbExceptions.UnknownCommandException();
+                }
                 break;
             case "DELETE":
-                delete(dividedCommand);
+                switch (dividedCommand[1].toUpperCase()) {
+                    case "DATABASE":
+                        deleteDatabase(dividedCommand[2]);
+                        break;
+                    case "TABLE":
+                        deleteTable(dividedCommand[2]);
+                        break;
+                    default:
+                        throw new DbExceptions.UnknownCommandException();
+                }
                 break;
             case "INSERT":
-                insert(dividedCommand);
+                insert(command);
                 break;
             case "USE":
-                use(dividedCommand);
+                use(dividedCommand[1]);
                 break;
             default:
-                throw (new DatabaseExceptions.UnknownCommandException("Uknown command."));
+                throw new DbExceptions.UnknownCommandException();
         }
     }
 
-    public void create(String command) throws DatabaseExceptions.DataDefinitionException, DatabaseExceptions.UnknownCommandException {
+    private void createDatabase(String command) throws DbExceptions.DataDefinitionException {
         //CREATE DATABASE <databasename>
+        String[] dividedCommand = command.split(" ");
+        if (databases.stream().noneMatch(o -> o.getName().equals(dividedCommand[2]))) {
+            databases.add(new Database(dividedCommand[2]));
+        } else {
+            throw (new DbExceptions.DataDefinitionException("database already exists: " + dividedCommand[2]));
+        }
+    }
+    private void createTable(String command) throws DbExceptions.DataDefinitionException {
         // CREATE TABLE -table name- (
         //  -column name- -column type- -NOT NULL- -UNIQUE- -REFERENCES table_name(column_name)-,
         //  );
-        String[] dividedCommand = command.split("\\s+");
-        switch (dividedCommand[1].toUpperCase()){
-            case "DATABASE":
-                if(databases.stream().noneMatch(o ->o.getName().equals(dividedCommand[2]))) {
-                    databases.add(new Database(dividedCommand[2]));
-                }
-                else{
-                    throw (new DatabaseExceptions.DataDefinitionException("database already exists: " + dividedCommand[2]));
-                }
-                break;
-            case "TABLE":
-                if(usedDatabase.getTables().stream().noneMatch(o -> o.getName().equals(dividedCommand[2]))){
-                    Table newTable = new Table(dividedCommand[2]);
+        Pattern createTablePattern = Pattern.compile("^CREATE TABLE ([a-zA-Z0-9_])\\((.+)\\)$");
+        Matcher createTableMatcher = createTablePattern.matcher(command);
 
-                    Pattern columnsPattern = Pattern.compile("^CREATE TABLE [a-zA-Z0-9_]\\((.*)\\)$");
-                    Matcher columnsMatcher = columnsPattern.matcher(command);
-                    if (columnsMatcher.find())
-                    {
-                        Pattern columnPattern = Pattern.compile("([^(),]+(\\([^()]*\\)[^(),]*)?),?");
-                        Matcher columnMatcher = columnPattern.matcher(columnsMatcher.group(1));
-                        while (columnMatcher.find()) {
-                            String commandRow = columnMatcher.group(1).replace("^\\s+", "");
-                            String[] columnDef = commandRow.split("\\s+");
-                            if(columnDef[0].equalsIgnoreCase("PRIMARY")){
-                                Pattern pkPattern = Pattern.compile("^PRIMARY[\\s]+KEY[\\s]*\\((.*)\\),?$");
-                                Matcher pkMatcher = pkPattern.matcher(commandRow);
-                                if (pkMatcher.find())
-                                {
-                                    String pks = pkMatcher.group(1);
-                                    for (String pk : pks.split(",")) {
-                                        Attribute currentAttribute = newTable.getAttributes().stream()
-                                                .filter(o -> o.getName().equals(pk)).findAny().orElse(null);
-                                        assert currentAttribute != null;
-                                        currentAttribute.setPk(true);
-                                    }
-                                }
-                            }
-                            else{
-                                if(newTable.getAttributes().stream().noneMatch(o -> o.getName().equals(columnDef[0]))) {
-                                    newTable.addAttribute(new Attribute(columnDef));
-                                }
-                                else{
-                                    throw (new DatabaseExceptions.DataDefinitionException("Column already exist in this table: " + columnDef[0]));
-                                }
-                            }
+        Pattern pkPattern = Pattern.compile("^PRIMARY KEY\\((.+)\\)");
+        Pattern fkPattern = Pattern.compile("REFERENCES ([^()]+)\\(([^()])\\)");
+        Matcher pkMatcher, fkMatcher;
+
+        if (createTableMatcher.find()) {
+            String tableName = createTableMatcher.group(1);
+            String attrDefinitions = createTableMatcher.group(2);
+            if (usedDatabase.getTables().stream().noneMatch(o -> o.getName().equals(tableName))) {
+                Table newTable = new Table(tableName);
+
+                for (String attrDef : attrDefinitions.split(",")) {
+                    // primary key constraint
+                    pkMatcher = pkPattern.matcher(attrDef);
+                    if (pkMatcher.find()) {
+                        String pks = pkMatcher.group(1);
+                        for (String pk : pks.split(",")) {
+                            newTable.getAttributes().stream()
+                                    .filter(o -> o.getName().equals(pk))
+                                    .findAny()
+                                    .ifPresent(currentAttribute -> currentAttribute.setPk(true));
                         }
                     }
-                    usedDatabase.addTable(newTable);
-                }
-                else{
-                    throw (new DatabaseExceptions.DataDefinitionException("Table already exist in this database: " + dividedCommand[2]));
-                }
-                break;
+                    else {
+                        // foreign key constraint
+                        fkMatcher = fkPattern.matcher(attrDef);
+                        if (fkMatcher.find()) {
+                            String refTableName = fkMatcher.group(1);
+                            Table refTable = usedDatabase.getTables().stream()
+                                    .filter(table -> table.getName().equals(refTableName))
+                                    .findAny().orElse(null);
+                            if (refTable == null)
+                                throw new DbExceptions.DataDefinitionException(
+                                        "Referencing table does not exists: " + refTableName);
+                            else {
+                                String refColName = fkMatcher.group(2);
+                                Attribute refCol = refTable.getAttributes().stream()
+                                        .filter(attribute -> attribute.getName().equals(refColName))
+                                        .findAny().orElse(null);
+                                if (refCol == null)
+                                    throw new DbExceptions.DataDefinitionException(
+                                            "Referencing column does not exists: "+ refColName);
+                                else if (!refCol.isUnique())
+                                    throw new DbExceptions.DataDefinitionException(
+                                            "Referencing column is not unique" + refColName);
+                            }
+                        }
+                        String[] attrDefDivided = attrDef.split(" ");
 
-            default:
-                throw (new DatabaseExceptions.UnknownCommandException("Uknown command."));
+                        if (newTable.getAttributes().stream()
+                                .noneMatch(o -> o.getName().equals(attrDefDivided[0]))
+                        )
+                            newTable.addAttribute(new Attribute(attrDefDivided));
+                        else {
+                            throw new DbExceptions.DataDefinitionException(
+                                    "Column already exist in this table: " + attrDefDivided[0]);
+                        }
+                    }
+                }
+                usedDatabase.addTable(newTable);
+            }
+            else{
+                throw new DbExceptions.DataDefinitionException(
+                        "Table already exist in this database: " + tableName);
+            }
         }
     }
 
-    public void delete(String[] command) throws DatabaseExceptions.UnknownCommandException, DatabaseExceptions.DataDefinitionException {
+    private void deleteDatabase(String databaseName) throws DbExceptions.DataDefinitionException {
         //DELETE DATABASE <databasename>
-        //DELETE TABLE <tablename>
-        switch (command[1].toUpperCase()){
-            case "DATABASE":
-                Database database = databases.stream()
-                        .filter(o -> o.getName().equals(command[2]))
-                        .findAny().orElse(null);
-                if(database == null){
-                    throw (new DatabaseExceptions.DataDefinitionException("Database does not exist: " + command[2]));
-                }
-                databases.remove(database);
-                break;
-
-            case "TABLE":
-                Table table = usedDatabase.getTables().stream()
-                        .filter(o -> o.getName().equals(command[2]))
-                        .findAny().orElse(null);
-                if(table == null){
-                    throw (new DatabaseExceptions.DataDefinitionException("Table does not exist: " + command[2]));
-                }
-                usedDatabase.removeTable(table);
-                break;
-            default:
-                throw (new DatabaseExceptions.UnknownCommandException("Uknown command."));
+        Database database = databases.stream()
+                .filter(o -> o.getName().equals(databaseName))
+                .findAny().orElse(null);
+        if (database == null) {
+            throw new DbExceptions.DataDefinitionException("Database does not exist: " + databaseName);
         }
-
+        databases.remove(database);
+    }
+    private void deleteTable(String tableName) throws DbExceptions.DataDefinitionException {
+        //DELETE TABLE <tablename>
+        Table table = usedDatabase.getTables().stream()
+                .filter(o -> o.getName().equals(tableName))
+                .findAny().orElse(null);
+        if(table == null){
+            throw new DbExceptions.DataDefinitionException("Table does not exist: " + tableName);
+        }
+        usedDatabase.removeTable(table);
     }
 
-    public void insert(String[] dividedCommand){
-        String parameters = dividedCommand[dividedCommand.length - 1];
-        parameters = parameters.substring(1, parameters.length() - 1);
-        String key = parameters.split(",")[0];
-        parameters = Arrays.stream(parameters.split(",")).skip(1).collect(Collectors.joining("#"));
-        System.out.println(key + " " + parameters);
-        mongoDBManager.insert(dividedCommand[2], key, parameters);
+    private void insert(String command) throws DbExceptions.DataManipulationException {
+        Matcher regexMatcher = Pattern.compile("\\((.*?)\\)").matcher(command);
+        String columns;
+        if(regexMatcher.find()) {
+            columns = regexMatcher.group(1);
+        }
+        else{
+            throw (new DbExceptions.DataManipulationException("Insert does not found what columns to insert into."));
+        }
+        String values;
+        if(regexMatcher.find()) {
+            values = regexMatcher.group(1);
+        }
+        else{
+            throw (new DbExceptions.DataManipulationException("Insert does not found what values to insert."));
+        }
+        Table currentTable = usedDatabase.getTables().stream()
+                .filter(o -> o.getName().equals(command.split(" ", 4)[2]))
+                .findFirst()
+                .orElse(null);
+        if(currentTable == null)
+            throw (new DbExceptions.DataManipulationException("Can't insert into table, because table does not exists."));
+        String[] parameters = Arrays.stream(values.split(",")).map(o -> o.replaceFirst("^\\s*", "")).toArray(String[]::new);
+        String[] valuestoInsert = new String[currentTable.getAttributes().size()];
+        Iterator<Attribute> it = currentTable.getAttributes().iterator();
+        int i = 0;
+        int j = 0;
+        while (i < valuestoInsert.length && it.hasNext())
+        {
+            Attribute column = it.next();
+            if(columns.contains(column.getName())) {
+                if ("INT".equalsIgnoreCase(column.getDataType())) {
+                    int number = Integer.parseInt(parameters[j]);
+                } else {
+                    Matcher m = Pattern.compile("\\((.*?)\\)").matcher(column.getDataType());
+                    if (m.find()) {
+                        String num = m.group(1);
+                        if (Integer.parseInt(num) < parameters[j].length() -2)
+                            throw (new DbExceptions.DataManipulationException("The string is too long."));
+                        parameters[j] = parameters[j].substring(1,parameters[j].length()-1);
+                    }
+                }
+                if(column.isUnique()){
+                    if(!mongoDBManager.valueIsUnique(currentTable.getName(),parameters[j],i - 1))
+                        throw (new DbExceptions.DataManipulationException("This field must be unique."));
+                }
+
+                if(column.isNotNull() && parameters[j].equals("null"))
+                    throw (new DbExceptions.DataManipulationException("This field must not be null."));
+                valuestoInsert[i] = parameters[j];
+                j++;
+
+            }else{
+                if(column.isNotNull())
+                    throw (new DbExceptions.DataManipulationException("This field must not be null."));
+                valuestoInsert[i] = "null";
+            }
+            i++;
+        }
+        mongoDBManager.insert(currentTable.getName(), valuestoInsert[0], Arrays.stream(valuestoInsert).skip(1).collect(Collectors.joining("#")));
     }
 
-    public void use( String[] command) throws DatabaseExceptions.DataDefinitionException {
+    private void use(String databaseName) throws DbExceptions.DataDefinitionException {
         usedDatabase = databases.stream()
-                .filter(o -> o.getName().equals(command[1]))
+                .filter(o -> o.getName().equals(databaseName))
                 .findAny().orElse(null);
         if(usedDatabase == null){
-            throw (new DatabaseExceptions.DataDefinitionException("Database does not exist: " + command[1]));
+            throw (new DbExceptions.DataDefinitionException("Database does not exist: " + databaseName));
         }
         mongoDBManager.use(usedDatabase.getName());
     }
