@@ -1,6 +1,5 @@
 package Client;
 
-import Server.Attribute;
 import Server.Database;
 import Server.Json;
 import Server.Table;
@@ -16,7 +15,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class CreateIndexWindow implements Initializable {
@@ -62,7 +60,7 @@ public class CreateIndexWindow implements Initializable {
 
         assert tbl != null;
         tbl.getAttributes().stream()
-                .filter(Predicate.not(Attribute::isIndex))
+                .filter(attribute -> attribute.getIndex().equals(""))
                 .forEach(
                         attribute -> attributesChoice.getItems().add(attribute.getName())
                 );

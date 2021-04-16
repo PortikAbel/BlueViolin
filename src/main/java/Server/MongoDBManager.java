@@ -17,7 +17,16 @@ public class MongoDBManager {
     public void insert (String tableName, String key, String value){
         MongoCollection<Document> collection = currentDatabase.getCollection(tableName);
         collection.insertOne(new Document(key,value));
+    }
 
+    public void insertUniqueIndex (String indexName, String key, String value) {
+        MongoCollection<Document> collection = currentDatabase.getCollection(indexName);
+        collection.insertOne(new Document(key,value));
+    }
+
+    public void insertNotUniqueIndex (String indexName, String attribute, String primaryKey) {
+        MongoCollection<Document> collection = currentDatabase.getCollection(indexName);
+        // append primaryKey to value of attribute
     }
 
     public boolean valueIsUnique(String tableName, String value, int index){

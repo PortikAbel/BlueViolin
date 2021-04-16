@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class CommandProcessor {
     private final List<Database> databases;
@@ -41,6 +42,9 @@ public class CommandProcessor {
                         break;
                     case "TABLE":
                         createTable(command);
+                        break;
+                    case "INDEX":
+                        createIndex(command);
                         break;
                     default:
                         throw new DbExceptions.UnknownCommandException();
@@ -153,6 +157,44 @@ public class CommandProcessor {
             }
         }
     }
+    private void createIndex(String command) throws DbExceptions.DataManipulationException {
+        Pattern createIndexPattern = Pattern.compile(
+                "^CREATE INDEX ([a-zA-Z0-9_]+ )?ON ([a-zA-Z0-9_]+)\\(([^()]+)\\)$",
+                Pattern.CASE_INSENSITIVE);
+        Matcher createIndexMatcher = createIndexPattern.matcher(command);
+
+        String indexName, tableName, attributeNames;
+
+        if (createIndexMatcher.find()) {
+            indexName = createIndexMatcher.group(1);
+            tableName = createIndexMatcher.group(2);
+            attributeNames = createIndexMatcher.group(3);
+        }
+        else {
+            throw new DbExceptions.DataManipulationException("Incorrect create index syntax.");
+        }
+
+        Table currentTable = usedDatabase.getTables().stream()
+                .filter(o -> o.getName().equals(tableName))
+                .findFirst()
+                .orElse(null);
+        if(currentTable == null)
+            throw new DbExceptions.DataManipulationException(
+                    "Can't create index on non-existent table: " + tableName);
+
+        Attribute currentAttribute = currentTable.getAttributes().stream()
+                .filter(o -> o.getName().equals(attributeNames))
+                .findFirst()
+                .orElse(null);
+        if (currentAttribute == null)
+            throw new DbExceptions.DataManipulationException(
+                    "Can't create index on non-existent attribute: " + attributeNames);
+
+        if (indexName == null)
+            indexName = tableName + "_" + attributeNames + "Index";
+
+        currentAttribute.setIndex(indexName);
+    }
 
     private void deleteDatabase(String databaseName) throws DbExceptions.DataDefinitionException {
         //DELETE DATABASE <databasename>
@@ -195,7 +237,8 @@ public class CommandProcessor {
                 .findFirst()
                 .orElse(null);
         if(currentTable == null)
-            throw new DbExceptions.DataManipulationException("Can't insert into table, because table does not exists: " + tableName);
+            throw new DbExceptions.DataManipulationException(
+                    "Can't insert into non-existent table: " + tableName);
 
         if (intoCols == null) {
             intoCols = currentTable.getAttributes().stream()
@@ -236,13 +279,13 @@ public class CommandProcessor {
                     Matcher varcharTypeMatcher = Pattern
                             .compile("VARCHAR\\(([0-9]+)\\)", Pattern.CASE_INSENSITIVE)
                             .matcher(attribute.getDataType());
-                    Matcher varcharValueMatcher = Pattern.compile("[\"']([^\"'])[\"']").matcher(val);
                     if (!varcharTypeMatcher.find()) {
                         throw new DbExceptions.DataManipulationException(
                                 "Attribute " + attribute.getName() +
                                         " has unknown datatype:" + attribute.getDataType()
                         );
                     }
+                    Matcher varcharValueMatcher = Pattern.compile("(^\"([^\"])\"$)|(^'[^']'$)").matcher(val);
                     if (!varcharValueMatcher.find()) {
                         throw new DbExceptions.DataManipulationException(
                                 "Varchar variable was given incorrectly: " + val
@@ -250,7 +293,7 @@ public class CommandProcessor {
                     }
                     int maxLen = Integer.parseInt(varcharTypeMatcher.group(1));
                     String varchar = varcharValueMatcher.group(1);
-                    if (varchar.length() -2 > maxLen)
+                    if (varchar.length() - 2 > maxLen)
                         throw (new DbExceptions.DataManipulationException("The string is too long."));
                     val = varchar;
                 }
@@ -274,6 +317,30 @@ public class CommandProcessor {
                     keysToInsert.add(val);
                 else
                     valuesToInsert.add(val);
+
+                // index
+                if (!attribute.getIndex().equals(""))
+                {
+                    if (attribute.isUnique())
+                        mongoDBManager.insertUniqueIndex(
+                                attribute.getIndex(),
+                                val,
+                                IntStream.range(0, value.size())
+                                        .filter(n -> n != i)
+                                        .mapToObj(value::get)
+                                        .collect(Collectors.joining("#"))
+                        );
+                    else
+                        mongoDBManager.insertNotUniqueIndex(
+                                attribute.getIndex(),
+                                val,
+                                currentTable.getAttributes().stream()
+                                        .filter(Attribute::isPk)
+                                        .mapToInt(pk -> intoColumn.indexOf(pk.getName()))
+                                        .mapToObj(value::get)
+                                        .collect(Collectors.joining("+"))
+                        );
+                }
             }
         }
 

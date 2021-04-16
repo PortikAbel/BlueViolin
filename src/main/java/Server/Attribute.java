@@ -2,8 +2,6 @@ package Server;
 
 import org.json.simple.JSONObject;
 
-import java.util.Arrays;
-
 public class Attribute {
     private String name;
     private String dataType;
@@ -12,7 +10,7 @@ public class Attribute {
     private boolean fk;
     private boolean notNull;
     private boolean unique;
-    private boolean index;
+    private String index;
 
     public Attribute(JSONObject o) {
 
@@ -24,7 +22,7 @@ public class Attribute {
         this.fk = (boolean) o.get("fk");
         this.notNull = (boolean) o.get("notNull");
         this.unique = (boolean) o.get("unique");
-        this.index = (boolean) o.get("index");
+        this.index = (String) o.get("index");
 
     }
 
@@ -37,7 +35,7 @@ public class Attribute {
         this.fk = fk;
         this.notNull = notNull;
         this.unique = unique;
-        this.index = false;
+        this.index = "";
     }
     //-column name- -column type- -NOT NULL- -UNIQUE- -REFERENCES database_name(column_name)
     public Attribute(String[] command){
@@ -49,7 +47,7 @@ public class Attribute {
         this.fk = false;
         this.notNull = false;
         this.unique = false;
-        this.index = false;
+        this.index = "";
         int i = 2;
         while( i < command.length){
             switch (command[i].toUpperCase()) {
@@ -152,11 +150,11 @@ public class Attribute {
         this.unique = unique;
     }
 
-    public boolean isIndex() {
+    public String getIndex() {
         return index;
     }
 
-    public void setIndex(boolean index) {
+    public void setIndex(String index) {
         this.index = index;
     }
 }

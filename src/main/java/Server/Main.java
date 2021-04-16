@@ -8,8 +8,14 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.regex.Pattern;
 
 public class Main {
+    private final static Pattern
+            successiveWhitespaces = Pattern.compile(
+                    "\\s+(?=(?:[^\"']*(?:(\"[^\"]*\")|('[^']*')))*[^\"']*$)"),
+            delimiterSurroundingSpaces = Pattern.compile(
+                    "\\s*([(){},;<>=])\\s*(?=(?:[^\"']*(?:(\"[^\"]*\")|('[^']*')))*[^\"']*$)");
 
     public static void main(String[] args) throws ParseException {
         // for the client
@@ -34,8 +40,8 @@ public class Main {
                     msgBuilder.append(inputLine);
                 }
                 msg = msgBuilder.toString();
-                msg = msg.replaceAll("\\s+"," ");
-                msg = msg.replaceAll("(\\s+)?([(),;{}<>=])(\\s+)?","$2");
+                msg = successiveWhitespaces.matcher(msg).replaceAll(" ");
+                msg = delimiterSurroundingSpaces.matcher(msg).replaceAll("$1");
 
                 for (String command : msg.split(";")) {
                     if ("".equals(command))

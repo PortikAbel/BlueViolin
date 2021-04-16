@@ -108,7 +108,7 @@
                            <FXCollections fx:factory="observableArrayList">
                                <String fx:value="int" />
                                <String fx:value="varchar(30)" />
-                               <String fx:value="bool" />
+                               <!--String fx:value="bool" /-->
                            </FXCollections>
                        </items>
                    </ComboBox>
