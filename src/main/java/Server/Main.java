@@ -18,7 +18,6 @@ public class Main {
                     "\\s*([(){},;<>=])\\s*(?=(?:[^\"']*(?:(\"[^\"]*\")|('[^']*')))*[^\"']*$)");
 
     public static void main(String[] args) throws ParseException {
-        // for the client
         int portNumber = 4242;
 
         try {
@@ -67,7 +66,8 @@ public class Main {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
+    }
+}
 /*
         try{
             CommandProcessor commandProcessor = new CommandProcessor();
@@ -87,5 +87,3 @@ public class Main {
             e.printStackTrace();
         }
 */
-    }
-}

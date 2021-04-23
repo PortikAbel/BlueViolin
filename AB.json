@@ -1,27 +1,27 @@
 {
   "name" : "AB",
   "tables" : [ {
-    "name" : "AB_tabla",
+    "name" : "allatok",
     "attributes" : [ {
-      "name" : "adfh",
-      "dataType" : null,
-      "refTable" : "",
-      "refColumn" : "",
+      "name" : "Nev",
+      "dataType" : "varchar(30)NOT",
+      "refTable" : null,
+      "refColumn" : null,
       "pk" : true,
-      "fk" : false,
-      "notNull" : true,
-      "unique" : true,
-      "index" : false
-    }, {
-      "name" : "ghgg",
-      "dataType" : null,
-      "refTable" : "",
-      "refColumn" : "",
-      "pk" : false,
       "fk" : false,
       "notNull" : false,
       "unique" : true,
-      "index" : false
+      "index" : ""
+    }, {
+      "name" : "IQ",
+      "dataType" : "int",
+      "refTable" : null,
+      "refColumn" : null,
+      "pk" : false,
+      "fk" : false,
+      "notNull" : true,
+      "unique" : true,
+      "index" : "IQindex "
     } ]
   } ]
 }

@@ -4,14 +4,14 @@
     "name" : "uj_tabla",
     "attributes" : [ {
       "name" : "ID",
-      "dataType" : null,
+      "dataType" : "int",
       "refTable" : "",
       "refColumn" : "",
       "pk" : true,
       "fk" : false,
       "notNull" : true,
       "unique" : true,
-      "index" : false
+      "index" : ""
     } ]
   } ]
 }

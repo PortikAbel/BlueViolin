@@ -83,7 +83,7 @@ public class MainWindow implements Initializable {
         treeView.setOnMouseClicked(new MouseEventHandler());
     }
 
-    public String send(String msg){
+    public String send(String msg) {
         clientToServerWriter.println(msg);
         clientToServerWriter.println("");
         System.out.println("Message sent: "+msg);
