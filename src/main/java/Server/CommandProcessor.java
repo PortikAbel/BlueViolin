@@ -1,10 +1,13 @@
 package Server;
 
+import com.mongodb.client.FindIterable;
+import org.bson.Document;
 import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -59,6 +62,8 @@ public class CommandProcessor {
                     case "TABLE":
                         deleteTable(dividedCommand[2]);
                         break;
+                    case "FROM":
+                        delete(command);
                     default:
                         throw new DbExceptions.UnknownCommandException();
                 }
@@ -204,6 +209,7 @@ public class CommandProcessor {
         if (database == null) {
             throw new DbExceptions.DataDefinitionException("Database does not exist: " + databaseName);
         }
+        mongoDBManager.deleteDatabase(databaseName);
         databases.remove(database);
     }
     private void deleteTable(String tableName) throws DbExceptions.DataDefinitionException {
@@ -214,6 +220,7 @@ public class CommandProcessor {
         if(table == null){
             throw new DbExceptions.DataDefinitionException("Table does not exist: " + tableName);
         }
+        mongoDBManager.deleteTable(tableName);
         usedDatabase.removeTable(table);
     }
 
@@ -271,10 +278,6 @@ public class CommandProcessor {
                         throw new DbExceptions.DataManipulationException(
                                 "Integer expected for attribute " + attribute.getName());
                     }
-                /*} else if ("bool".equalsIgnoreCase(attribute.getDataType())) {
-                    if (!"true".equalsIgnoreCase(val) || !"false".equalsIgnoreCase(val))
-                        throw new DbExceptions.DataManipulationException(
-                                "Bool expected for attribute " + attribute.getName());*/
                 } else {
                     Matcher varcharTypeMatcher = Pattern
                             .compile("VARCHAR\\(([0-9]+)\\)", Pattern.CASE_INSENSITIVE)
@@ -285,7 +288,7 @@ public class CommandProcessor {
                                         " has unknown datatype:" + attribute.getDataType()
                         );
                     }
-                    Matcher varcharValueMatcher = Pattern.compile("(^\"([^\"])\"$)|(^'[^']'$)").matcher(val);
+                    Matcher varcharValueMatcher = Pattern.compile("^(?:'([^']+)')|(?:\"([^\"]+)\")$").matcher(val);
                     if (!varcharValueMatcher.find()) {
                         throw new DbExceptions.DataManipulationException(
                                 "Varchar variable was given incorrectly: " + val
@@ -293,6 +296,8 @@ public class CommandProcessor {
                     }
                     int maxLen = Integer.parseInt(varcharTypeMatcher.group(1));
                     String varchar = varcharValueMatcher.group(1);
+                    if (varchar == null)
+                        varchar = varcharValueMatcher.group(2);
                     if (varchar.length() - 2 > maxLen)
                         throw (new DbExceptions.DataManipulationException("The string is too long."));
                     val = varchar;
@@ -300,8 +305,9 @@ public class CommandProcessor {
 
                 // unique check
                 if(attribute.isUnique()){
-                    if(!mongoDBManager.valueIsUnique(
+                    if(!mongoDBManager.isUnique(
                             currentTable.getName(), val,
+                            attribute.isPk() ? "key" : "value",
                             attribute.isPk() ? keysToInsert.size() : valuesToInsert.size())
                     )
                         throw new DbExceptions.DataManipulationException(
@@ -349,6 +355,80 @@ public class CommandProcessor {
                 String.join("#", keysToInsert),
                 String.join("#", valuesToInsert)
         );
+    }
+    private void delete(String command) throws DbExceptions.DataManipulationException {
+        Pattern insertPattern = Pattern.compile(
+                "^DELETE FROM ([a-zA-Z0-9_]+) WHERE (.*)$",
+                Pattern.CASE_INSENSITIVE);
+        Matcher insertMatcher = insertPattern.matcher(command);
+        String tableName;
+        String[] conditions;
+        if(insertMatcher.find()) {
+            tableName = insertMatcher.group(1);
+            conditions = insertMatcher.group(2).split("(?i) AND ");
+        }
+        else{
+            throw new DbExceptions.DataManipulationException("Incorrect delete syntax.");
+        }
+
+        Table currentTable = usedDatabase.getTables().stream()
+                .filter(o -> o.getName().equals(tableName))
+                .findFirst()
+                .orElse(null);
+        if(currentTable == null)
+            throw new DbExceptions.DataManipulationException(
+                    "Can't delete from non-existent table: " + tableName);
+
+        // parse conditions
+        HashMap<String, ArrayList<Filter>> filterHashMap = new HashMap<>();
+        Pattern condPattern = Pattern.compile("^(.+)([<>=!]+)(.+)$");
+        for (String cond : conditions) {
+            Matcher condMatcher = condPattern.matcher(cond);
+            String attributeName, operator, rightOperand;
+            if (condMatcher.find()) {
+                attributeName = condMatcher.group(1);
+                operator = condMatcher.group(2);
+                rightOperand = condMatcher.group(3);
+            } else {
+                throw new DbExceptions.DataManipulationException("Incorrect where condition: " + cond);
+            }
+            if (!filterHashMap.containsKey(attributeName))
+                filterHashMap.put(attributeName, new ArrayList<>());
+            filterHashMap.get(attributeName).add(new Filter(operator, rightOperand));
+        }
+
+        FindIterable<Document> documents = mongoDBManager.getAllDocuments(tableName);
+
+        ArrayList<String> keysToDelete = new ArrayList<>();
+        for (Document document : documents) {
+            String[] keys = document.getString("key").split("#");
+            String[] values = document.getString("value").split("#");
+
+            int pkCount = 0, valCount = 0;
+            boolean delete = true;
+            for (Attribute attribute : currentTable.getAttributes()) {
+                if (attribute.isPk()) {
+                    pkCount++;
+                    int finalPkCount = pkCount;
+                    delete &= filterHashMap
+                            .get(attribute.getName()).stream()
+                            .map(filter -> filter.eval(keys[finalPkCount]))
+                            .reduce(Boolean::logicalAnd).orElse(true);
+                }
+                else {
+                    valCount++;
+                    int finalValCount = valCount;
+                    delete &= filterHashMap
+                            .get(attribute.getName()).stream()
+                            .map(filter -> filter.eval(values[finalValCount]))
+                            .reduce(Boolean::logicalAnd).orElse(true);
+                }
+            }
+
+            if (delete) keysToDelete.add(document.getString("key"));
+        }
+
+        mongoDBManager.delete(tableName, keysToDelete);
     }
 
     private void use(String databaseName) throws DbExceptions.DataDefinitionException {

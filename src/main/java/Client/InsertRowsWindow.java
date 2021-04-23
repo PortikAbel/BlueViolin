@@ -63,27 +63,24 @@ public class InsertRowsWindow implements Initializable {
         {
             Attribute attribute = tbl.getAttributes().get(i);
 
-            TextField textField = new TextField();
+            ValidateTextField textField = new ValidateTextField(attribute.getDataType());
             textField.setPromptText(attribute.getName());
             valuesBox.getChildren().add(textField);
 
             TableColumn<ObservableList<SimpleStringProperty>, String> newColumn = new TableColumn<>();
             newColumn.setText(attribute.getName());
             newColumn.setEditable(true);
-            setCellValueFactory(newColumn, i, attribute.getDataType().equalsIgnoreCase("int"));
+            setCellValueFactory(newColumn, i);
             tableOfAttributes.getColumns().add(newColumn);
         }
     }
 
     private void setCellValueFactory(TableColumn<ObservableList<SimpleStringProperty>, String> column,
-                                     final int index, final boolean integer)
+                                     final int index)
     {
-        column.setCellValueFactory(observableListString -> {
-            if (integer)
-                return observableListString.getValue().get(index);
-            else
-                return new SimpleStringProperty("'" + observableListString.getValue().get(index).getValue() + "'");
-        });
+        column.setCellValueFactory(observableListString ->
+            observableListString.getValue().get(index)
+        );
     }
 
     public void setMainWindow(MainWindow mainWindow){
@@ -93,14 +90,20 @@ public class InsertRowsWindow implements Initializable {
     public void addRow() {
         ObservableList<SimpleStringProperty> row = FXCollections.observableArrayList();
 
-        valuesBox.getChildren().forEach(
-                attribute -> {
-                    row.add(new SimpleStringProperty( ((TextField)attribute).getText() ));
-                    ((TextField)attribute).clear();
-                }
-        );
+        if ( valuesBox.getChildren().stream()
+                .map(node -> (ValidateTextField)node)
+                .map(ValidateTextField::isValid)
+                .reduce(Boolean::logicalAnd)
+                .orElse(true)) {
+            valuesBox.getChildren().forEach(
+                    attribute -> {
+                        row.add(new SimpleStringProperty( ((TextField)attribute).getText() ));
+                        ((TextField)attribute).clear();
+                    }
+            );
 
-        tableOfAttributes.getItems().add(row);
+            tableOfAttributes.getItems().add(row);
+        }
     }
 
     public void contextMenu(){
