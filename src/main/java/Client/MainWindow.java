@@ -188,11 +188,27 @@ public class MainWindow implements Initializable {
                 selectedItem.getValue(),
                 columnNames)
         );
-        System.out.printf("CREATE INDEX %s ON %s(%s)%n",
-                indexName,
-                selectedItem.getValue(),
-                columnNames);
-        System.out.println(resp);
+        if (!resp.equals("OK"))
+            System.out.println(resp);
+    }
+
+    public void sendQuery(String query) {
+        String resp = send(query);
+        if (!resp.equals("OK"))
+            System.out.println(resp);
+    }
+
+    public void newQuery() {
+        FXMLLoader loader = new FXMLLoader();
+        loader.setLocation(getClass().getResource("Query.fxml"));
+        try {
+            AnchorPane queryDialogue = loader.load();
+            Query queryController = loader.getController();
+            queryController.setMainWindow(MainWindow.this);
+            borderPane.setCenter(queryDialogue);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private class MouseEventHandler implements EventHandler<MouseEvent>

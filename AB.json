@@ -1,9 +1,9 @@
 {
   "name" : "AB",
   "tables" : [ {
-    "name" : "allatok",
+    "name" : "Allatok",
     "attributes" : [ {
-      "name" : "Nev",
+      "name" : "Faj",
       "dataType" : "varchar(30)NOT",
       "refTable" : null,
       "refColumn" : null,
@@ -19,9 +19,32 @@
       "refColumn" : null,
       "pk" : false,
       "fk" : false,
-      "notNull" : true,
-      "unique" : true,
+      "notNull" : false,
+      "unique" : false,
       "index" : "IQindex "
+    } ]
+  }, {
+    "name" : "hazi_kedvencek",
+    "attributes" : [ {
+      "name" : "Faj",
+      "dataType" : "varchar(30)NOT",
+      "refTable" : "Allatok",
+      "refColumn" : "Faj",
+      "pk" : false,
+      "fk" : true,
+      "notNull" : false,
+      "unique" : false,
+      "index" : ""
+    }, {
+      "name" : "Nev",
+      "dataType" : "varchar(30)NOT",
+      "refTable" : null,
+      "refColumn" : null,
+      "pk" : true,
+      "fk" : false,
+      "notNull" : false,
+      "unique" : true,
+      "index" : ""
     } ]
   } ]
 }

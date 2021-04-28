@@ -1,7 +1,5 @@
 package Server;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -10,11 +8,10 @@ import java.util.List;
 
 
 public class Table {
-    private String name;
+    private final String name;
+    private final List<Attribute> attributes;
 
-    private List<Attribute> attributes;
-
-    public Table(JSONObject jsonObject) throws JsonProcessingException {
+    public Table(JSONObject jsonObject) {
 
         name = (String) jsonObject.get("name");
         attributes = new ArrayList<>();
