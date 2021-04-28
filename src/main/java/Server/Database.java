@@ -23,7 +23,7 @@ public class Database {
 
     public Database(String name) {
         this.name = name;
-        tables = tables = new ArrayList<>();
+        tables = new ArrayList<>();
     }
 
     public String getName() {
@@ -38,8 +38,15 @@ public class Database {
         return tables;
     }
 
-    public void addTable (Table newtable){
-        tables.add(newtable);
+    public Table getTable(String tableName) {
+        return tables.stream()
+                .filter(o -> o.getName().equals(tableName))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public void addTable (Table newTable){
+        tables.add(newTable);
     };
 
     public void removeTable(Table table){

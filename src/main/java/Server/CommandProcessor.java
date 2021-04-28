@@ -5,10 +5,7 @@ import org.bson.Document;
 import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -21,12 +18,8 @@ public class CommandProcessor {
 
     public CommandProcessor() throws IOException, ParseException {
         databases = Json.buildDatabases();
-        usedDatabase = databases.get(0);
+        usedDatabase = null;
         mongoDBManager = new MongoDBManager();
-    }
-
-    public List<Database> getDatabases() {
-        return databases;
     }
 
     public void processCommand(String command)
@@ -37,6 +30,9 @@ public class CommandProcessor {
             IOException
     {
         String[] dividedCommand = command.split(" ");
+        if (!dividedCommand[0].equalsIgnoreCase("USE") && usedDatabase == null)
+            throw new DbExceptions.DataDefinitionException("Unspecified database");
+
         switch (dividedCommand[0].toUpperCase()) {
             case "CREATE":
                 switch (dividedCommand[1].toUpperCase()) {
@@ -123,9 +119,7 @@ public class CommandProcessor {
                         fkMatcher = fkPattern.matcher(attrDef);
                         if (fkMatcher.find()) {
                             String refTableName = fkMatcher.group(1);
-                            Table refTable = usedDatabase.getTables().stream()
-                                    .filter(table -> table.getName().equals(refTableName))
-                                    .findAny().orElse(null);
+                            Table refTable = usedDatabase.getTable(refTableName);
                             if (refTable == null)
                                 throw new DbExceptions.DataDefinitionException(
                                         "Referencing table does not exists: " + refTableName);
@@ -214,17 +208,19 @@ public class CommandProcessor {
     }
     private void deleteTable(String tableName) throws DbExceptions.DataDefinitionException {
         //DELETE TABLE <tablename>
-        Table table = usedDatabase.getTables().stream()
-                .filter(o -> o.getName().equals(tableName))
-                .findAny().orElse(null);
+        Table table = usedDatabase.getTable(tableName);
         if(table == null){
             throw new DbExceptions.DataDefinitionException("Table does not exist: " + tableName);
+        }
+        for (Attribute attribute : table.getAttributes()) {
+            if (!attribute.getIndex().equals(""))
+                mongoDBManager.deleteTable(attribute.getIndex());
         }
         mongoDBManager.deleteTable(tableName);
         usedDatabase.removeTable(table);
     }
 
-    private void insert(String command) throws DbExceptions.DataManipulationException {
+    private void insert(String command) throws DbExceptions.DataManipulationException, DbExceptions.DataDefinitionException {
         Pattern insertPattern = Pattern.compile(
                 "INSERT INTO ([a-zA-Z0-9_]+)[ ]?(\\(([^()]+)\\))?VALUES\\(([^()]+)\\)",
                 Pattern.CASE_INSENSITIVE);
@@ -239,10 +235,7 @@ public class CommandProcessor {
             throw new DbExceptions.DataManipulationException("Incorrect insert syntax.");
         }
         
-        Table currentTable = usedDatabase.getTables().stream()
-                .filter(o -> o.getName().equals(tableName))
-                .findFirst()
-                .orElse(null);
+        Table currentTable = usedDatabase.getTable(tableName);
         if(currentTable == null)
             throw new DbExceptions.DataManipulationException(
                     "Can't insert into non-existent table: " + tableName);
@@ -288,7 +281,7 @@ public class CommandProcessor {
                                         " has unknown datatype:" + attribute.getDataType()
                         );
                     }
-                    Matcher varcharValueMatcher = Pattern.compile("^(?:'([^']+)')|(?:\"([^\"]+)\")$").matcher(val);
+                    Matcher varcharValueMatcher = Pattern.compile("^'([^']+)'|\"([^\"]+)\"$").matcher(val);
                     if (!varcharValueMatcher.find()) {
                         throw new DbExceptions.DataManipulationException(
                                 "Varchar variable was given incorrectly: " + val
@@ -299,19 +292,48 @@ public class CommandProcessor {
                     if (varchar == null)
                         varchar = varcharValueMatcher.group(2);
                     if (varchar.length() - 2 > maxLen)
-                        throw (new DbExceptions.DataManipulationException("The string is too long."));
+                        throw new DbExceptions.DataManipulationException("The string is too long.");
                     val = varchar;
+                }
+
+                // fk check
+
+                if(attribute.isFk()) {
+                    Table refTable = usedDatabase.getTable(attribute.getRefTable());
+                    if (refTable == null)
+                        throw new DbExceptions.DataDefinitionException
+                                ("Non-existent table referenced: " + attribute.getRefTable());
+                    Iterator<Attribute> attributeIterator = refTable.getAttributes().iterator();
+                    int pkIndex = 0, valueIndex = 0;
+                    Attribute refAttr = null;
+                    while (attributeIterator.hasNext() &&
+                            !(refAttr = attributeIterator.next()).getName().equals(attribute.getRefColumn())
+                    ) {
+                        if (refAttr.isPk())
+                            pkIndex++;
+                        else
+                            valueIndex++;
+                    }
+                    if (refAttr == null)
+                        throw new DbExceptions.DataDefinitionException
+                                ("Non-existent attribute referenced: " + attribute.getRefColumn());
+                    if (mongoDBManager.isUnique(
+                            refTable.getName(), val,
+                            refAttr.isPk() ? "_id" : "value",
+                            refAttr.isPk() ? pkIndex : valueIndex
+                    ))
+                        throw new DbExceptions.DataManipulationException
+                                ("Referencing table does not contains value: " + val);
                 }
 
                 // unique check
                 if(attribute.isUnique()){
                     if(!mongoDBManager.isUnique(
                             currentTable.getName(), val,
-                            attribute.isPk() ? "key" : "value",
+                            attribute.isPk() ? "_id" : "value",
                             attribute.isPk() ? keysToInsert.size() : valuesToInsert.size())
                     )
-                        throw new DbExceptions.DataManipulationException(
-                                "This field must be unique.");
+                        throw new DbExceptions.DataManipulationException("This field must be unique.");
                 }
 
                 // not null check
@@ -328,7 +350,7 @@ public class CommandProcessor {
                 if (!attribute.getIndex().equals(""))
                 {
                     if (attribute.isUnique())
-                        mongoDBManager.insertUniqueIndex(
+                        mongoDBManager.insert(
                                 attribute.getIndex(),
                                 val,
                                 IntStream.range(0, value.size())
@@ -336,16 +358,18 @@ public class CommandProcessor {
                                         .mapToObj(value::get)
                                         .collect(Collectors.joining("#"))
                         );
-                    else
-                        mongoDBManager.insertNotUniqueIndex(
+                    else {
+                        String key = currentTable.getAttributes().stream()
+                                .filter(Attribute::isPk)
+                                .mapToInt(pk -> intoColumn.indexOf(pk.getName()))
+                                .mapToObj(value::get)
+                                .collect(Collectors.joining("#"));
+                        mongoDBManager.insert(
                                 attribute.getIndex(),
-                                val,
-                                currentTable.getAttributes().stream()
-                                        .filter(Attribute::isPk)
-                                        .mapToInt(pk -> intoColumn.indexOf(pk.getName()))
-                                        .mapToObj(value::get)
-                                        .collect(Collectors.joining("+"))
+                                val + "#" + key,
+                                key
                         );
+                    }
                 }
             }
         }
@@ -362,70 +386,96 @@ public class CommandProcessor {
                 Pattern.CASE_INSENSITIVE);
         Matcher insertMatcher = insertPattern.matcher(command);
         String tableName;
-        String[] conditions;
+        String conditions;
         if(insertMatcher.find()) {
             tableName = insertMatcher.group(1);
-            conditions = insertMatcher.group(2).split("(?i) AND ");
+            conditions = insertMatcher.group(2);
         }
         else{
             throw new DbExceptions.DataManipulationException("Incorrect delete syntax.");
         }
 
-        Table currentTable = usedDatabase.getTables().stream()
-                .filter(o -> o.getName().equals(tableName))
-                .findFirst()
-                .orElse(null);
+        Table currentTable = usedDatabase.getTable(tableName);
         if(currentTable == null)
             throw new DbExceptions.DataManipulationException(
                     "Can't delete from non-existent table: " + tableName);
 
+        // indexes of attributes in key/value string
+
+        HashMap< String, Attribute > attributeByName = new HashMap<>();
+        HashMap< Attribute, Integer > indexOf = new HashMap<>();
+        int keyIndex = 0, valueIndex = 0;
+        for (Attribute attribute : currentTable.getAttributes()) {
+            attributeByName.put(attribute.getName(), attribute);
+            if (attribute.isPk())
+                indexOf.put(attribute, keyIndex++);
+            else
+                indexOf.put(attribute, valueIndex++);
+        }
+
         // parse conditions
-        HashMap<String, ArrayList<Filter>> filterHashMap = new HashMap<>();
-        Pattern condPattern = Pattern.compile("^(.+)([<>=!]+)(.+)$");
-        for (String cond : conditions) {
-            Matcher condMatcher = condPattern.matcher(cond);
-            String attributeName, operator, rightOperand;
-            if (condMatcher.find()) {
-                attributeName = condMatcher.group(1);
-                operator = condMatcher.group(2);
-                rightOperand = condMatcher.group(3);
-            } else {
-                throw new DbExceptions.DataManipulationException("Incorrect where condition: " + cond);
+        HashMap< Filter, Attribute > filterHashMap = new HashMap<>();
+        ArrayList< ArrayList<Filter> > orFilters = new ArrayList<>();
+        Pattern condPattern = Pattern.compile("^(.+)([<>=!]+)[\"']?([^\"']+)[\"']?$");
+
+        for (String andCond : conditions.split("(?i) OR ")) {
+            ArrayList<Filter> andFilters = new ArrayList<>();
+            for (String cond : andCond.split("(?i) AND ")) {
+                Matcher condMatcher = condPattern.matcher(cond);
+                String attributeName, operator, rightOperand;
+                if (condMatcher.find()) {
+                    attributeName = condMatcher.group(1);
+                    operator = condMatcher.group(2);
+                    rightOperand = condMatcher.group(3);
+                } else {
+                    throw new DbExceptions.DataManipulationException("Incorrect where condition: " + cond);
+                }
+                Filter filter = new Filter(operator, rightOperand);
+                andFilters.add(filter);
+                filterHashMap.put(filter, attributeByName.get(attributeName));
             }
-            if (!filterHashMap.containsKey(attributeName))
-                filterHashMap.put(attributeName, new ArrayList<>());
-            filterHashMap.get(attributeName).add(new Filter(operator, rightOperand));
+            orFilters.add(andFilters);
         }
 
         FindIterable<Document> documents = mongoDBManager.getAllDocuments(tableName);
 
         ArrayList<String> keysToDelete = new ArrayList<>();
+        HashMap< String, ArrayList<String> > keysToDeleteIndex = new HashMap<>();
+        currentTable.getAttributes().stream()
+                .map(Attribute::getIndex)
+                .filter(index -> !index.equals(""))
+                .forEach(index -> keysToDeleteIndex.put(index, new ArrayList<>()));
+
         for (Document document : documents) {
-            String[] keys = document.getString("key").split("#");
+            String[] keys = document.getString("_id").split("#");
             String[] values = document.getString("value").split("#");
 
-            int pkCount = 0, valCount = 0;
-            boolean delete = true;
-            for (Attribute attribute : currentTable.getAttributes()) {
-                if (attribute.isPk()) {
-                    pkCount++;
-                    int finalPkCount = pkCount;
-                    delete &= filterHashMap
-                            .get(attribute.getName()).stream()
-                            .map(filter -> filter.eval(keys[finalPkCount]))
-                            .reduce(Boolean::logicalAnd).orElse(true);
-                }
-                else {
-                    valCount++;
-                    int finalValCount = valCount;
-                    delete &= filterHashMap
-                            .get(attribute.getName()).stream()
-                            .map(filter -> filter.eval(values[finalValCount]))
-                            .reduce(Boolean::logicalAnd).orElse(true);
+            if (orFilters.stream().map(
+                    andFilters -> andFilters.stream().map(filter -> {
+                        Attribute filterOn = filterHashMap.get(filter);
+                        if (filterOn.isPk())
+                            return filter.eval(keys[indexOf.get(filterOn)]);
+                        else
+                            return filter.eval(values[indexOf.get(filterOn)]); })
+                            .reduce(Boolean::logicalAnd).orElse(true))
+                    .reduce(Boolean::logicalOr).orElse(true)
+            ) {
+                keysToDelete.add(document.getString("_id"));
+                int vi = 0;
+                for (Attribute attribute : currentTable.getAttributes()) {
+                    if (!attribute.isPk()) {
+                        if (!attribute.getIndex().equals("")) {
+                            if (attribute.isUnique())
+                                keysToDeleteIndex.get(attribute.getIndex())
+                                        .add(values[vi]);
+                            else
+                                keysToDeleteIndex.get(attribute.getIndex())
+                                        .add(values[vi] + "#" + document.getString("_id"));
+                        }
+                        vi++;
+                    }
                 }
             }
-
-            if (delete) keysToDelete.add(document.getString("key"));
         }
 
         mongoDBManager.delete(tableName, keysToDelete);

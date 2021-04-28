@@ -13,11 +13,12 @@ import static com.mongodb.client.model.Updates.set;
 
 public class MongoDBManager {
     private final MongoClient mongoClient;
-    private MongoDatabase currentDatabase = null;
+    private MongoDatabase currentDatabase;
 
     public MongoDBManager() {
         MongoClientURI uri = new MongoClientURI("mongodb+srv://Csongi:admin@blueviolin.j4yyd.mongodb.net/test?retryWrites=true&w=majority");
         this.mongoClient = new MongoClient(uri);
+        currentDatabase = mongoClient.getDatabase("master");
     }
 
     public void deleteDatabase(String databaseName) {
@@ -32,34 +33,34 @@ public class MongoDBManager {
 
     public void insert (String tableName, String key, String value){
         MongoCollection<Document> collection = currentDatabase.getCollection(tableName);
-        collection.insertOne(new Document("key", key).append("value", value));
+        collection.insertOne(new Document("_id", key).append("value", value));
     }
 
     public void insertUniqueIndex (String indexName, String key, String value) {
         MongoCollection<Document> collection = currentDatabase.getCollection(indexName);
-        collection.insertOne(new Document("key", key).append("value", value));
+        collection.insertOne(new Document("_id", key).append("value", value));
     }
 
     public void insertNotUniqueIndex (String indexName, String attribute, String primaryKey) {
         MongoCollection<Document> collection = currentDatabase.getCollection(indexName);
-        FindIterable<Document> result = collection.find(Filters.eq("key", attribute));
+        FindIterable<Document> result = collection.find(Filters.eq("_id", attribute));
         Document docToUpdate = result.first();
         if (docToUpdate != null) {
             String newValue = docToUpdate.getString("value");
             newValue += "#" + primaryKey;
             collection.findOneAndUpdate(
-                    Filters.eq("key", attribute),
+                    Filters.eq("_id", attribute),
                     set("value", newValue)
             );
         } else {
-            collection.insertOne(new Document("key", attribute).append("value", primaryKey));
+            collection.insertOne(new Document("_id", attribute).append("value", primaryKey));
         }
     }
 
     public void delete (String tableName, ArrayList<String> keysToDelete) {
         MongoCollection<Document> collection = currentDatabase.getCollection(tableName);
         for(String key : keysToDelete) {
-            collection.deleteOne(Filters.eq("key", key));
+            collection.deleteOne(Filters.eq("_id", key));
         }
     }
 

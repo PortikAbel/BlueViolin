@@ -14,7 +14,7 @@
    <children>
       <VBox spacing="10.0">
          <children>
-            <HBox>
+            <HBox VBox.vgrow="ALWAYS">
                <children>
                   <Label text="Insert into table ">
                      <font>
@@ -30,9 +30,9 @@
                   <Button mnemonicParsing="false" onAction="#insert" text="INSERT" />
                </children>
             </HBox>
-            <TableView fx:id="tableOfAttributes" editable="true" onMouseClicked="#contextMenu" />
-            <HBox fx:id="valuesBox" spacing="5.0" />
-            <HBox>
+            <TableView fx:id="tableOfAttributes" editable="true" onMouseClicked="#contextMenu" VBox.vgrow="ALWAYS" />
+            <HBox fx:id="valuesBox" spacing="5.0" VBox.vgrow="ALWAYS" />
+            <HBox VBox.vgrow="ALWAYS">
                <children>
                   <Region prefWidth="200.0" HBox.hgrow="ALWAYS" />
                   <Button mnemonicParsing="false" onAction="#addRow" text="Add Values" />
