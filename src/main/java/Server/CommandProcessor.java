@@ -1,5 +1,9 @@
 package Server;
 
+import Server.DbStructure.Attribute;
+import Server.DbStructure.Database;
+import Server.DbStructure.DbExceptions;
+import Server.DbStructure.Table;
 import com.mongodb.client.FindIterable;
 import org.bson.Document;
 import org.json.simple.parser.ParseException;
@@ -9,7 +13,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class CommandProcessor {
     private final List<Database> databases;
@@ -30,9 +33,6 @@ public class CommandProcessor {
             IOException
     {
         String[] dividedCommand = command.split(" ");
-        if (!dividedCommand[0].equalsIgnoreCase("USE") && usedDatabase == null)
-            throw new DbExceptions.DataDefinitionException("Unspecified database");
-
         switch (dividedCommand[0].toUpperCase()) {
             case "CREATE":
                 switch (dividedCommand[1].toUpperCase()) {
@@ -40,9 +40,13 @@ public class CommandProcessor {
                         createDatabase(command);
                         break;
                     case "TABLE":
+                        if ( usedDatabase == null)
+                            throw new DbExceptions.DataDefinitionException("Unspecified database");
                         createTable(command);
                         break;
                     case "INDEX":
+                        if ( usedDatabase == null)
+                            throw new DbExceptions.DataDefinitionException("Unspecified database");
                         createIndex(command);
                         break;
                     default:
@@ -56,9 +60,13 @@ public class CommandProcessor {
                         deleteDatabase(dividedCommand[2]);
                         break;
                     case "TABLE":
+                        if ( usedDatabase == null)
+                            throw new DbExceptions.DataDefinitionException("Unspecified database");
                         deleteTable(dividedCommand[2]);
                         break;
                     case "FROM":
+                        if ( usedDatabase == null)
+                            throw new DbExceptions.DataDefinitionException("Unspecified database");
                         delete(command);
                     default:
                         throw new DbExceptions.UnknownCommandException();
@@ -66,11 +74,17 @@ public class CommandProcessor {
                 Json.saveDatabases(databases);
                 break;
             case "INSERT":
+                if ( usedDatabase == null)
+                    throw new DbExceptions.DataDefinitionException("Unspecified database");
                 insert(command);
                 break;
             case "USE":
                 use(dividedCommand[1]);
                 break;
+            case "SELECT":
+                if ( usedDatabase == null)
+                    throw new DbExceptions.DataDefinitionException("Unspecified database");
+                select(command);
             default:
                 throw new DbExceptions.UnknownCommandException();
         }
@@ -203,6 +217,7 @@ public class CommandProcessor {
         if (database == null) {
             throw new DbExceptions.DataDefinitionException("Database does not exist: " + databaseName);
         }
+        usedDatabase = null;
         mongoDBManager.deleteDatabase(databaseName);
         databases.remove(database);
     }
@@ -349,26 +364,15 @@ public class CommandProcessor {
                 // index
                 if (!attribute.getIndex().equals(""))
                 {
+                    String key = currentTable.getAttributes().stream()
+                            .filter(Attribute::isPk)
+                            .mapToInt(pk -> intoColumn.indexOf(pk.getName()))
+                            .mapToObj(value::get)
+                            .collect(Collectors.joining("#"));
                     if (attribute.isUnique())
-                        mongoDBManager.insert(
-                                attribute.getIndex(),
-                                val,
-                                IntStream.range(0, value.size())
-                                        .filter(n -> n != i)
-                                        .mapToObj(value::get)
-                                        .collect(Collectors.joining("#"))
-                        );
+                        mongoDBManager.insert(attribute.getIndex(), val, key);
                     else {
-                        String key = currentTable.getAttributes().stream()
-                                .filter(Attribute::isPk)
-                                .mapToInt(pk -> intoColumn.indexOf(pk.getName()))
-                                .mapToObj(value::get)
-                                .collect(Collectors.joining("#"));
-                        mongoDBManager.insert(
-                                attribute.getIndex(),
-                                val + "#" + key,
-                                key
-                        );
+                        mongoDBManager.insertNotUniqueIndex(attribute.getIndex(), val, key);
                     }
                 }
             }
@@ -440,11 +444,11 @@ public class CommandProcessor {
         FindIterable<Document> documents = mongoDBManager.getAllDocuments(tableName);
 
         ArrayList<String> keysToDelete = new ArrayList<>();
-        HashMap< String, ArrayList<String> > keysToDeleteIndex = new HashMap<>();
+        HashMap< String, HashSet<String> > keysToDeleteIndex = new HashMap<>();
         currentTable.getAttributes().stream()
                 .map(Attribute::getIndex)
                 .filter(index -> !index.equals(""))
-                .forEach(index -> keysToDeleteIndex.put(index, new ArrayList<>()));
+                .forEach(index -> keysToDeleteIndex.put(index, new HashSet<>()));
 
         for (Document document : documents) {
             String[] keys = document.getString("_id").split("#");
@@ -461,24 +465,34 @@ public class CommandProcessor {
                     .reduce(Boolean::logicalOr).orElse(true)
             ) {
                 keysToDelete.add(document.getString("_id"));
-                int vi = 0;
-                for (Attribute attribute : currentTable.getAttributes()) {
-                    if (!attribute.isPk()) {
-                        if (!attribute.getIndex().equals("")) {
-                            if (attribute.isUnique())
+                currentTable.getAttributes().stream()
+                        .filter(attribute -> !attribute.isPk())
+                        .forEach(attribute -> {
+                            if (!attribute.getIndex().equals("")) {
                                 keysToDeleteIndex.get(attribute.getIndex())
-                                        .add(values[vi]);
-                            else
-                                keysToDeleteIndex.get(attribute.getIndex())
-                                        .add(values[vi] + "#" + document.getString("_id"));
-                        }
-                        vi++;
-                    }
-                }
+                                        .add(values[indexOf.get(attribute)]);
+                            }
+                        });
             }
         }
 
         mongoDBManager.delete(tableName, keysToDelete);
+    }
+
+    private void select(String command) throws DbExceptions.DataManipulationException {
+        Pattern selectPattern = Pattern.compile(
+                "^SELECT (\\*|[a-zA-Z0-9_]+) FROM ([a-zA-Z0-9_]+) (?:WHERE (.+))?$",
+                Pattern.CASE_INSENSITIVE);
+        Matcher selectMatcher = selectPattern.matcher(command);
+
+        String projection, fromTable, conditions;
+        if (selectMatcher.find()) {
+            projection = selectMatcher.group(1);
+            fromTable = selectMatcher.group(2);
+            conditions = selectMatcher.group(3);
+        } else {
+            throw new DbExceptions.DataManipulationException("Incorrect SELECT syntax");
+        }
     }
 
     private void use(String databaseName) throws DbExceptions.DataDefinitionException {

@@ -1,6 +1,7 @@
 package Server;
 
-import com.mongodb.*;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -33,11 +34,6 @@ public class MongoDBManager {
 
     public void insert (String tableName, String key, String value){
         MongoCollection<Document> collection = currentDatabase.getCollection(tableName);
-        collection.insertOne(new Document("_id", key).append("value", value));
-    }
-
-    public void insertUniqueIndex (String indexName, String key, String value) {
-        MongoCollection<Document> collection = currentDatabase.getCollection(indexName);
         collection.insertOne(new Document("_id", key).append("value", value));
     }
 

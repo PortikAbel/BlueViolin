@@ -1,9 +1,9 @@
 package Client;
 
-import Server.Attribute;
-import Server.Database;
+import Server.DbStructure.Attribute;
+import Server.DbStructure.Database;
 import Server.Json;
-import Server.Table;
+import Server.DbStructure.Table;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;

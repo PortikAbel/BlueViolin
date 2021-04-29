@@ -1,8 +1,8 @@
 package Client;
 
-import Server.Database;
+import Server.DbStructure.Database;
 import Server.Json;
-import Server.Table;
+import Server.DbStructure.Table;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
