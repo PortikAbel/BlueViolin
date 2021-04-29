@@ -1,6 +1,6 @@
 package Client;
 
-import Server.Attribute;
+import Server.DbStructure.Attribute;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;

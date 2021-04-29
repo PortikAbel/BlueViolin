@@ -6,7 +6,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-public class ClientMain extends Application {
+public class Client extends Application {
     private FXMLLoader loader;
     @Override
     public void start(Stage stage) throws Exception {

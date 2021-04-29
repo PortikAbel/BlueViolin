@@ -1,5 +1,7 @@
 package Server;
 
+import Server.DbStructure.Database;
+import Server.DbStructure.DbExceptions;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import org.json.simple.JSONObject;

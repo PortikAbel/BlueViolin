@@ -1,0 +1,37 @@
+{
+  "name" : "BigDB",
+  "tables" : [ {
+    "name" : "BigTable",
+    "attributes" : [ {
+      "name" : "A",
+      "dataType" : "int",
+      "refTable" : null,
+      "refColumn" : null,
+      "pk" : true,
+      "fk" : false,
+      "notNull" : true,
+      "unique" : false,
+      "index" : ""
+    }, {
+      "name" : "B",
+      "dataType" : "int",
+      "refTable" : null,
+      "refColumn" : null,
+      "pk" : false,
+      "fk" : false,
+      "notNull" : true,
+      "unique" : false,
+      "index" : ""
+    }, {
+      "name" : "C",
+      "dataType" : "int",
+      "refTable" : null,
+      "refColumn" : null,
+      "pk" : false,
+      "fk" : false,
+      "notNull" : true,
+      "unique" : false,
+      "index" : ""
+    } ]
+  } ]
+}

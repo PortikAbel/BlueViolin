@@ -1,5 +1,6 @@
 package Server;
 
+import Server.DbStructure.DbExceptions;
 import org.json.simple.parser.ParseException;
 
 import java.io.BufferedReader;
@@ -10,7 +11,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.regex.Pattern;
 
-public class Main {
+public class Server {
     private final static Pattern
             successiveWhitespaces = Pattern.compile(
                     "\\s+(?=(?:[^\"']*(?:(\"[^\"]*\")|('[^']*')))*[^\"']*$)"),
@@ -68,22 +69,3 @@ public class Main {
         }
     }
 }
-/*
-        try{
-            CommandProcessor commandProcessor = new CommandProcessor();
-            commandProcessor.processCommand("delete database University;");
-            commandProcessor.processCommand("create database University;");
-            commandProcessor.processCommand("USE University;");
-
-            commandProcessor.processCommand("CREATE TABLE disciplines (\n" +
-                    "  DiscID varchar(5) PRIMARY KEY,\n" +
-                    "  DName varchar(30),\n" +
-                    "  CreditNr int\n" +
-                    ");");
-            commandProcessor.processCommand("insert into disciplines (DiscID,DName,CreditNr) values ('DB1','Databases 1', 7);");
-            Json.saveDatabases(commandProcessor.getDatabases());
-
-        } catch (IOException | DatabaseExceptions.UnknownCommandException | DatabaseExceptions.DataDefinitionException | DatabaseExceptions.UnsuccesfulDeleteException e) {
-            e.printStackTrace();
-        }
-*/

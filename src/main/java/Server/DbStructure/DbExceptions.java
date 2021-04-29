@@ -1,4 +1,4 @@
-package Server;
+package Server.DbStructure;
 
 
 public class DbExceptions {

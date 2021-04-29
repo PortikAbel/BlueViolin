@@ -1,4 +1,4 @@
-package Server;
+package Server.DbStructure;
 
 import org.json.simple.JSONObject;
 

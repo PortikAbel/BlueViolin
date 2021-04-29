@@ -1,4 +1,4 @@
-package Server;
+package Server.DbStructure;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.json.simple.JSONArray;
