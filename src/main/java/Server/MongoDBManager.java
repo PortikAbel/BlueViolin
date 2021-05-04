@@ -9,6 +9,9 @@ import com.mongodb.client.model.Filters;
 import org.bson.Document;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 
 import static com.mongodb.client.model.Updates.set;
 
@@ -48,7 +51,7 @@ public class MongoDBManager {
         Document docToUpdate = result.first();
         if (docToUpdate != null) {
             String newValue = docToUpdate.getString("value");
-            newValue += "#" + primaryKey;
+            newValue += "##" + primaryKey;
             collection.findOneAndUpdate(
                     Filters.eq("_id", attribute),
                     set("value", newValue)
@@ -64,7 +67,7 @@ public class MongoDBManager {
         Document docToUpdate = result.first();
         if (docToUpdate != null) {
             String newValue = docToUpdate.getString("value");
-            newValue += "#" + primaryKey;
+            newValue += "##" + primaryKey;
             collection.findOneAndUpdate(
                     Filters.eq("_id", attribute),
                     set("value", newValue)
@@ -74,11 +77,28 @@ public class MongoDBManager {
         }
     }
 
-    public void delete (String tableName, ArrayList<String> keysToDelete) {
+    public void delete (String tableName, Iterable<Object> keysToDelete) {
         MongoCollection<Document> collection = currentDatabase.getCollection(tableName);
-        for(String key : keysToDelete) {
+        for(Object key : keysToDelete) {
             collection.deleteOne(Filters.eq("_id", key));
         }
+    }
+
+    public void deleteFromNotUniqueIndex (String indexName, HashMap<Object, ArrayList<String>> pksToDelete) {
+        MongoCollection<Document> collection = currentDatabase.getCollection(indexName);
+        pksToDelete.forEach((key, list) -> {
+            Document docToUpdate = collection.find(Filters.eq("_id", key)).first();
+            if (docToUpdate != null) {
+                String newValue = Arrays.stream(docToUpdate.getString("value")
+                        .split("##"))
+                        .filter(pk -> !list.contains(pk))
+                        .collect(Collectors.joining("##"));
+                collection.findOneAndUpdate(
+                        Filters.eq("_id", key),
+                        set("value", newValue)
+                );
+            }
+        });
     }
 
     public boolean isUnique(String tableName, String value, String key_value, int index){
