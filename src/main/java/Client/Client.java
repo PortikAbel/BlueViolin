@@ -1,5 +1,6 @@
 package Client;
 
+import Client.Control.MainWindow;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -11,7 +12,7 @@ public class Client extends Application {
     @Override
     public void start(Stage stage) throws Exception {
         loader = new FXMLLoader();
-        loader.setLocation(getClass().getResource("MainWindow.fxml"));
+        loader.setLocation(getClass().getResource("./View/MainWindow.fxml"));
         Parent root = loader.load();
         stage.setTitle("BlueViolin");
         stage.setScene(new Scene(root));

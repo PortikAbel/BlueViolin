@@ -12,10 +12,17 @@ public class Filter {
         switch (operator) {
             case "=" : return leftOperand.equals(rightOperand);
             case "!=" : return  !leftOperand.equals(rightOperand);
-            case "<" : return Integer.parseInt(leftOperand) < Integer.parseInt(rightOperand);
-            case "<=" : return Integer.parseInt(leftOperand) <= Integer.parseInt(rightOperand);
-            case ">" : return Integer.parseInt(leftOperand) > Integer.parseInt(rightOperand);
-            case ">=" : return Integer.parseInt(leftOperand) >= Integer.parseInt(rightOperand);
+            default : return true;
+        }
+    }
+    public boolean eval(Integer leftOperand) {
+        switch (operator) {
+            case "=" : return leftOperand == Integer.parseInt(rightOperand);
+            case "!=" : return  leftOperand != Integer.parseInt(rightOperand);
+            case "<" : return leftOperand < Integer.parseInt(rightOperand);
+            case "<=" : return leftOperand <= Integer.parseInt(rightOperand);
+            case ">" : return leftOperand > Integer.parseInt(rightOperand);
+            case ">=" : return leftOperand >= Integer.parseInt(rightOperand);
             default : return true;
         }
     }

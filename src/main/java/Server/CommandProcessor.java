@@ -240,11 +240,11 @@ public class CommandProcessor {
                 "INSERT INTO ([a-zA-Z0-9_]+)[ ]?(\\(([^()]+)\\))?VALUES\\(([^()]+)\\)",
                 Pattern.CASE_INSENSITIVE);
         Matcher insertMatcher = insertPattern.matcher(command);
-        String tableName, intoCols, values;
+        String tableName, intoCols, valueList;
         if(insertMatcher.find()) {
             tableName = insertMatcher.group(1);
             intoCols = insertMatcher.group(3);
-            values = insertMatcher.group(4);
+            valueList = insertMatcher.group(4);
         }
         else{
             throw new DbExceptions.DataManipulationException("Incorrect insert syntax.");
@@ -261,23 +261,25 @@ public class CommandProcessor {
                     .collect(Collectors.joining(","));
         }
 
-        List<String> intoColumn, value;
-        intoColumn = Arrays.asList(intoCols.split(","));
-        value = Arrays.asList(values.split(","));
+        List<String> colNames, values;
+        colNames = Arrays.asList(intoCols.split(","));
+        values = Arrays.asList(valueList.split(","));
 
         List<String> valuesToInsert = new ArrayList<>();
         List<String> keysToInsert = new ArrayList<>();
 
+        boolean intPK = false;
+
         for (Attribute attribute : currentTable.getAttributes())
         {
-            int i = intoColumn.indexOf(attribute.getName());
+            int i = colNames.indexOf(attribute.getName());
             if (i < 0) {
                 if (attribute.isNotNull())
                     throw new DbExceptions.DataManipulationException("This field must not be null.");
                 valuesToInsert.add("null");
             }
             else {
-                String val = value.get(i);
+                String val = values.get(i);
                 // type check
                 if ("int".equalsIgnoreCase(attribute.getDataType())) {
                     try {
@@ -286,6 +288,7 @@ public class CommandProcessor {
                         throw new DbExceptions.DataManipulationException(
                                 "Integer expected for attribute " + attribute.getName());
                     }
+                    intPK = true;
                 } else {
                     Matcher varcharTypeMatcher = Pattern
                             .compile("VARCHAR\\(([0-9]+)\\)", Pattern.CASE_INSENSITIVE)
@@ -361,14 +364,36 @@ public class CommandProcessor {
                 else
                     valuesToInsert.add(val);
 
-                // index
-                if (!attribute.getIndex().equals(""))
-                {
-                    String key = currentTable.getAttributes().stream()
-                            .filter(Attribute::isPk)
-                            .mapToInt(pk -> intoColumn.indexOf(pk.getName()))
-                            .mapToObj(value::get)
-                            .collect(Collectors.joining("#"));
+            }
+        }
+
+        String key = String.join("#", keysToInsert);
+        String value = String.join("#", valuesToInsert);
+
+        if (keysToInsert.size() == 1 && intPK)
+            mongoDBManager.insertIntKey(tableName, Integer.parseInt(key), value);
+        else
+            mongoDBManager.insert(tableName, key, value);
+
+        HashMap<String, Attribute> attributeHashMap = new HashMap<>();
+        currentTable.getAttributes()
+                .forEach(attribute -> attributeHashMap.put(attribute.getName(), attribute));
+
+        // indexing
+        for (int i = 0; i < colNames.size(); i++) {
+            Attribute attribute = attributeHashMap.get(colNames.get(i));
+
+            if (!attribute.getIndex().equals(""))
+            {
+                if ("int".equalsIgnoreCase(attribute.getDataType())) {
+                    Integer val = Integer.parseInt(values.get(i));
+                    if (attribute.isUnique())
+                        mongoDBManager.insertIntKey(attribute.getIndex(), val, key);
+                    else {
+                        mongoDBManager.insertNotUniqueIndexIntKey(attribute.getIndex(), val, key);
+                    }
+                } else {
+                    String val = values.get(i);
                     if (attribute.isUnique())
                         mongoDBManager.insert(attribute.getIndex(), val, key);
                     else {
@@ -377,12 +402,6 @@ public class CommandProcessor {
                 }
             }
         }
-
-        mongoDBManager.insert(
-                tableName,
-                String.join("#", keysToInsert),
-                String.join("#", valuesToInsert)
-        );
     }
     private void delete(String command) throws DbExceptions.DataManipulationException {
         Pattern insertPattern = Pattern.compile(

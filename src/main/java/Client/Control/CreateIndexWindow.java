@@ -1,4 +1,4 @@
-package Client;
+package Client.Control;
 
 import Server.DbStructure.Database;
 import Server.Json;
