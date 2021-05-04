@@ -37,7 +37,28 @@ public class MongoDBManager {
         collection.insertOne(new Document("_id", key).append("value", value));
     }
 
+    public void insertIntKey(String tableName, Integer key, String value){
+        MongoCollection<Document> collection = currentDatabase.getCollection(tableName);
+        collection.insertOne(new Document("_id", key).append("value", value));
+    }
+
     public void insertNotUniqueIndex (String indexName, String attribute, String primaryKey) {
+        MongoCollection<Document> collection = currentDatabase.getCollection(indexName);
+        FindIterable<Document> result = collection.find(Filters.eq("_id", attribute));
+        Document docToUpdate = result.first();
+        if (docToUpdate != null) {
+            String newValue = docToUpdate.getString("value");
+            newValue += "#" + primaryKey;
+            collection.findOneAndUpdate(
+                    Filters.eq("_id", attribute),
+                    set("value", newValue)
+            );
+        } else {
+            collection.insertOne(new Document("_id", attribute).append("value", primaryKey));
+        }
+    }
+
+    public void insertNotUniqueIndexIntKey (String indexName, Integer attribute, String primaryKey) {
         MongoCollection<Document> collection = currentDatabase.getCollection(indexName);
         FindIterable<Document> result = collection.find(Filters.eq("_id", attribute));
         Document docToUpdate = result.first();

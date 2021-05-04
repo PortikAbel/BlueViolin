@@ -1,4 +1,4 @@
-package Client;
+package Client.Control;
 
 import Server.DbStructure.Attribute;
 import Server.DbStructure.Database;
@@ -200,7 +200,7 @@ public class MainWindow implements Initializable {
 
     public void newQuery() {
         FXMLLoader loader = new FXMLLoader();
-        loader.setLocation(getClass().getResource("Query.fxml"));
+        loader.setLocation(getClass().getResource("../View/Query.fxml"));
         try {
             AnchorPane queryDialogue = loader.load();
             Query queryController = loader.getController();
@@ -224,7 +224,7 @@ public class MainWindow implements Initializable {
                     MenuItem newDatabaseOption = new MenuItem("new database");
                     newDatabaseOption.setOnAction( actionEvent -> {
                         FXMLLoader loader = new FXMLLoader();
-                        loader.setLocation(getClass().getResource("NewDatabase.fxml"));
+                        loader.setLocation(getClass().getResource("../View/NewDatabase.fxml"));
                         try {
                             AnchorPane newDatabaseDialogue = loader.load();
                             NewDatabase newDatabaseController = loader.getController();
@@ -255,7 +255,7 @@ public class MainWindow implements Initializable {
                     MenuItem newTableOption = new MenuItem("new table");
                     newTableOption.setOnAction( actionEvent -> {
                         FXMLLoader loader = new FXMLLoader();
-                        loader.setLocation(getClass().getResource("NewTable.fxml"));
+                        loader.setLocation(getClass().getResource("../View/NewTable.fxml"));
                         try {
                             AnchorPane newTableDialogue = loader.load();
                             NewTable newTableController = loader.getController();
@@ -284,7 +284,7 @@ public class MainWindow implements Initializable {
                     MenuItem createIndexOption = new MenuItem("create index");
                     createIndexOption.setOnAction( actionEvent -> {
                         FXMLLoader loader = new FXMLLoader();
-                        loader.setLocation(getClass().getResource("CreateIndexWindow.fxml"));
+                        loader.setLocation(getClass().getResource("../View/CreateIndexWindow.fxml"));
                         try {
                             AnchorPane createIndexDialogue = loader.load();
                             CreateIndexWindow createIndexController = loader.getController();
@@ -298,7 +298,7 @@ public class MainWindow implements Initializable {
                     MenuItem insertRowsOption = new MenuItem("insert rows");
                     insertRowsOption.setOnAction( actionEvent -> {
                         FXMLLoader loader = new FXMLLoader();
-                        loader.setLocation(getClass().getResource("InsertRowsWindow.fxml"));
+                        loader.setLocation(getClass().getResource("../View/InsertRowsWindow.fxml"));
                         try {
                             AnchorPane insertRowsDialogue = loader.load();
                             InsertRowsWindow insertRowsController = loader.getController();

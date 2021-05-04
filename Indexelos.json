@@ -1,0 +1,37 @@
+{
+  "name" : "Indexelos",
+  "tables" : [ {
+    "name" : "Int_String_Int",
+    "attributes" : [ {
+      "name" : "A",
+      "dataType" : "int",
+      "refTable" : null,
+      "refColumn" : null,
+      "pk" : true,
+      "fk" : false,
+      "notNull" : true,
+      "unique" : false,
+      "index" : ""
+    }, {
+      "name" : "B",
+      "dataType" : "varchar(30)",
+      "refTable" : null,
+      "refColumn" : null,
+      "pk" : false,
+      "fk" : false,
+      "notNull" : false,
+      "unique" : false,
+      "index" : ""
+    }, {
+      "name" : "C",
+      "dataType" : "int",
+      "refTable" : null,
+      "refColumn" : null,
+      "pk" : false,
+      "fk" : false,
+      "notNull" : false,
+      "unique" : false,
+      "index" : "Cindex "
+    } ]
+  } ]
+}

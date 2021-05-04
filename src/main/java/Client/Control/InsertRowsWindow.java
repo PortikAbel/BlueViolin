@@ -1,4 +1,4 @@
-package Client;
+package Client.Control;
 
 import Server.DbStructure.Attribute;
 import Server.DbStructure.Database;
