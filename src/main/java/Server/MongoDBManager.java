@@ -7,6 +7,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -111,8 +112,16 @@ public class MongoDBManager {
         return true;
     }
 
-    public FindIterable<Document> getAllDocuments(String tableName) {
+    public FindIterable<Document> findAll(String tableName) {
         return currentDatabase.getCollection(tableName).find();
+    }
+
+    public FindIterable<Document> findFiltered(String collectionName, Bson filter) {
+        MongoCollection<Document> collection = currentDatabase.getCollection(collectionName);
+        if (filter == null)
+            return collection.find();
+        else
+            return collection.find(filter);
     }
 
     public void use(String databaseName){
