@@ -5,7 +5,9 @@ import Server.DbStructure.Database;
 import Server.DbStructure.DbExceptions;
 import Server.DbStructure.Table;
 import com.mongodb.client.FindIterable;
+import com.mongodb.client.model.Filters;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
@@ -85,6 +87,7 @@ public class CommandProcessor {
                 if ( usedDatabase == null)
                     throw new DbExceptions.DataDefinitionException("Unspecified database");
                 select(command);
+                break;
             default:
                 throw new DbExceptions.UnknownCommandException();
         }
@@ -483,7 +486,7 @@ public class CommandProcessor {
                 .collect(Collectors.toList());
         boolean oneIntPK = pks.size() == 1 && "int".equalsIgnoreCase(pks.get(0).getDataType());
 
-        FindIterable<Document> documents = mongoDBManager.getAllDocuments(tableName);
+        FindIterable<Document> documents = mongoDBManager.findAll(tableName);
         for (Document document : documents) {
             Object key = document.get("_id");
             String[] values = document.getString("value").split("#");
@@ -555,7 +558,7 @@ public class CommandProcessor {
 
     private void select(String command) throws DbExceptions.DataManipulationException {
         Pattern selectPattern = Pattern.compile(
-                "^SELECT (\\*|[a-zA-Z0-9_]+) FROM ([a-zA-Z0-9_]+) (?:WHERE (.+))?$",
+                "^SELECT (\\*|[a-zA-Z0-9_]+) FROM ([a-zA-Z0-9_]+)(?: WHERE (.+))?$",
                 Pattern.CASE_INSENSITIVE);
         Matcher selectMatcher = selectPattern.matcher(command);
 
@@ -576,24 +579,25 @@ public class CommandProcessor {
         // indexes of attributes in key/value string
 
         HashMap< String, Attribute > attributeByName = new HashMap<>();
-        HashMap< Attribute, Integer > indexOf = new HashMap<>();
-        int keyIndex = 0, valueIndex = 0;
+        HashMap< Attribute, Integer > indexInDocument = new HashMap<>();
+        int pkCount = (int) currentTable.getAttributes().stream().filter(Attribute::isPk).count();
+        int pkIndex = 0, valueIndex = 0;
         for (Attribute attribute : currentTable.getAttributes()) {
             attributeByName.put(attribute.getName(), attribute);
             if (attribute.isPk())
-                indexOf.put(attribute, keyIndex++);
+                indexInDocument.put(attribute, pkIndex++);
             else
-                indexOf.put(attribute, valueIndex++);
+                indexInDocument.put(attribute, pkCount + valueIndex++);
         }
 
         // parse conditions
-        HashMap< Filter, Attribute > filterHashMap = new HashMap<>();
-        ArrayList< ArrayList<Filter> > orFilters = new ArrayList<>();
-        Pattern condPattern = Pattern.compile("^(.+)([<>=!]+)[\"']?([^\"']+)[\"']?$");
+        HashMap< Attribute, ArrayList<Filter> > filtersOnAttribute = new HashMap<>();
+        currentTable.getAttributes().forEach(attribute -> filtersOnAttribute.put(attribute, new ArrayList<>()));
 
-        for (String andCond : conditions.split("(?i) OR ")) {
-            ArrayList<Filter> andFilters = new ArrayList<>();
-            for (String cond : andCond.split("(?i) AND ")) {
+        if (conditions != null) {
+            Pattern condPattern = Pattern.compile("^([^<>=!]+)([<>=!]+)[\"']?([^\"'<>=!]+)[\"']?$");
+
+            for (String cond : conditions.split("(?i) AND ")) {
                 Matcher condMatcher = condPattern.matcher(cond);
                 String attributeName, operator, rightOperand;
                 if (condMatcher.find()) {
@@ -604,11 +608,121 @@ public class CommandProcessor {
                     throw new DbExceptions.DataManipulationException("Incorrect where condition: " + cond);
                 }
                 Filter filter = new Filter(operator, rightOperand);
-                andFilters.add(filter);
-                filterHashMap.put(filter, attributeByName.get(attributeName));
+                filtersOnAttribute.get(attributeByName.get(attributeName)).add(filter);
             }
-            orFilters.add(andFilters);
         }
+
+        // find primary keys from indexes
+        Stack<List<String>> pkListsToIntersect = new Stack<>();
+        filtersOnAttribute.forEach((attribute, filters) -> {
+            if (!attribute.getIndex().equals("") && filters.size() > 0) {
+                List<Bson> bsonList;
+                if (attribute.getDataType().equalsIgnoreCase("int"))
+                    bsonList = filters.stream().map(Filter::asMongoFilterOnIntID).collect(Collectors.toList());
+                else
+                    bsonList = filters.stream().map(Filter::asMongoFilterOnID).collect(Collectors.toList());
+
+                FindIterable<Document> documents =
+                        mongoDBManager.findFiltered(attribute.getIndex(), Filters.and(bsonList));
+                List<String> filteredPKs = new ArrayList<>();
+                for (Document document : documents) {
+                    String pks = document.getString("value");
+                    if (attribute.isUnique()) {
+                        filteredPKs.add(pks);
+                    } else {
+                        filteredPKs.addAll(Arrays.asList(pks.split("##")));
+                    }
+                }
+                pkListsToIntersect.push(filteredPKs);
+            }
+        });
+
+        // construct a filter on PK
+        Bson filter = null;
+        Attribute pk = null;
+        if (pkCount == 1) {    // single PK
+            pk = currentTable.getAttributes().stream()
+                    .filter(Attribute::isPk)
+                    .findFirst()
+                    .orElse(null);
+        }
+        if (pk != null && filtersOnAttribute.get(pk).size() > 0) {
+            if (pk.getDataType().equalsIgnoreCase("int")) {
+                filter = Filters.and(filtersOnAttribute.get(pk).stream()
+                                .map(Filter::asMongoFilterOnIntID)
+                                .collect(Collectors.toList())
+                );
+            } else {
+                filter = Filters.and(filtersOnAttribute.get(pk).stream()
+                                .map(Filter::asMongoFilterOnID)
+                                .collect(Collectors.toList())
+                );
+            }
+        }
+
+        if (!pkListsToIntersect.empty()) {
+
+            // intersection of primary key lists
+            List<String> filteredPKs = pkListsToIntersect.pop();
+            while (!pkListsToIntersect.empty()) {
+                filteredPKs = pkListsToIntersect.pop().stream()
+                        .filter(filteredPKs::contains)
+                        .collect(Collectors.toList());
+            }
+
+            if (pk != null) {
+                if (pk.getDataType().equalsIgnoreCase("int")) {
+                    if (filter != null)
+                        filter = Filters.and(
+                                Filters.in("_id", filteredPKs.stream()
+                                        .map(Integer::parseInt)
+                                        .collect(Collectors.toList())),
+                                filter
+                        );
+                    else
+                        filter = Filters.in("_id", filteredPKs.stream()
+                                        .map(Integer::parseInt)
+                                        .collect(Collectors.toList()));
+                } else {
+                    if (filter != null)
+                        filter = Filters.and(
+                                Filters.in("_id", filteredPKs),
+                                filter
+                        );
+                    else
+                        filter = Filters.in("_id", filteredPKs);
+                }
+            } else {
+                filter = Filters.in("_id", filteredPKs);
+            }
+        }
+
+
+
+        // find documents from main collection filtered by indexes
+        FindIterable<Document> documents = mongoDBManager.findFiltered(currentTable.getName(), filter);
+        List<List<String>> result = new ArrayList<>();
+        for (Document document : documents) {
+            List<String> row = new ArrayList<>();
+            row.addAll(Arrays.asList(document.get("_id").toString().split("#")));
+            row.addAll(Arrays.asList(document.getString("value").split("#")));
+
+            List<Boolean> passed = new ArrayList<>();
+            filtersOnAttribute.forEach((attribute, filters) -> {
+                if (attribute.getIndex().equals("") && !attribute.isPk()) {
+                    passed.add(
+                            filters.stream()
+                                    .map(fil -> fil.eval(row.get(indexInDocument.get(attribute))))
+                                    .reduce(Boolean::logicalAnd).orElse(true)
+                    );
+                }
+            });
+            if (passed.stream().reduce(Boolean::logicalAnd).orElse(true))
+                result.add(row);
+        }
+
+        // projection
+        result.stream().map(row -> String.join(";", row)).forEach(System.out::println);
     }
 
     private void use(String databaseName) throws DbExceptions.DataDefinitionException {
