@@ -27,7 +27,7 @@ public class CommandProcessor {
         mongoDBManager = new MongoDBManager();
     }
 
-    public void processCommand(String command)
+    public String processCommand(String command)
             throws DbExceptions.DataDefinitionException,
             DbExceptions.UnknownCommandException,
             DbExceptions.UnsuccessfulDeleteException,
@@ -39,61 +39,49 @@ public class CommandProcessor {
             case "CREATE":
                 switch (dividedCommand[1].toUpperCase()) {
                     case "DATABASE":
-                        createDatabase(command);
-                        break;
+                        return createDatabase(command);
                     case "TABLE":
                         if ( usedDatabase == null)
                             throw new DbExceptions.DataDefinitionException("Unspecified database");
-                        createTable(command);
-                        break;
+                        return createTable(command);
                     case "INDEX":
                         if ( usedDatabase == null)
                             throw new DbExceptions.DataDefinitionException("Unspecified database");
-                        createIndex(command);
-                        break;
+                        return createIndex(command);
                     default:
                         throw new DbExceptions.UnknownCommandException();
                 }
-                Json.saveDatabases(databases);
-                break;
             case "DELETE":
                 switch (dividedCommand[1].toUpperCase()) {
                     case "DATABASE":
-                        deleteDatabase(dividedCommand[2]);
-                        break;
+                        return deleteDatabase(dividedCommand[2]);
                     case "TABLE":
                         if ( usedDatabase == null)
                             throw new DbExceptions.DataDefinitionException("Unspecified database");
-                        deleteTable(dividedCommand[2]);
-                        break;
+                        return deleteTable(dividedCommand[2]);
                     case "FROM":
                         if ( usedDatabase == null)
                             throw new DbExceptions.DataDefinitionException("Unspecified database");
-                        delete(command);
+                        return delete(command);
                     default:
                         throw new DbExceptions.UnknownCommandException();
                 }
-                Json.saveDatabases(databases);
-                break;
             case "INSERT":
                 if ( usedDatabase == null)
                     throw new DbExceptions.DataDefinitionException("Unspecified database");
-                insert(command);
-                break;
+                return insert(command);
             case "USE":
-                use(dividedCommand[1]);
-                break;
+                return use(dividedCommand[1]);
             case "SELECT":
                 if ( usedDatabase == null)
                     throw new DbExceptions.DataDefinitionException("Unspecified database");
-                select(command);
-                break;
+                return select(command);
             default:
                 throw new DbExceptions.UnknownCommandException();
         }
     }
 
-    private void createDatabase(String command) throws DbExceptions.DataDefinitionException {
+    private String createDatabase(String command) throws DbExceptions.DataDefinitionException, IOException, DbExceptions.UnsuccessfulDeleteException {
         //CREATE DATABASE <databasename>
         String[] dividedCommand = command.split(" ");
         if (databases.stream().noneMatch(o -> o.getName().equals(dividedCommand[2]))) {
@@ -101,8 +89,10 @@ public class CommandProcessor {
         } else {
             throw (new DbExceptions.DataDefinitionException("database already exists: " + dividedCommand[2]));
         }
+        Json.saveDatabases(databases);
+        return "database " + dividedCommand[2] + " created successfully";
     }
-    private void createTable(String command) throws DbExceptions.DataDefinitionException {
+    private String createTable(String command) throws DbExceptions.DataDefinitionException, IOException, DbExceptions.UnsuccessfulDeleteException {
         // CREATE TABLE -table name- (
         //  -column name- -column type- -NOT NULL- -UNIQUE- -REFERENCES table_name(column_name)-,
         //  );
@@ -171,11 +161,15 @@ public class CommandProcessor {
                 throw new DbExceptions.DataDefinitionException(
                         "Table already exist in this database: " + tableName);
             }
+            Json.saveDatabases(databases);
+            return "table " + tableName + " created successfully";
+        } else {
+            throw new DbExceptions.DataDefinitionException("Incorrect create table syntax");
         }
     }
-    private void createIndex(String command) throws DbExceptions.DataManipulationException {
+    private String createIndex(String command) throws DbExceptions.DataManipulationException, IOException, DbExceptions.UnsuccessfulDeleteException {
         Pattern createIndexPattern = Pattern.compile(
-                "^CREATE INDEX ([a-zA-Z0-9_]+ )?ON ([a-zA-Z0-9_]+)\\(([^()]+)\\)$",
+                "^CREATE INDEX ([a-zA-Z0-9_]+)? ON ([a-zA-Z0-9_]+)\\(([^()]+)\\)$",
                 Pattern.CASE_INSENSITIVE);
         Matcher createIndexMatcher = createIndexPattern.matcher(command);
 
@@ -210,9 +204,12 @@ public class CommandProcessor {
             indexName = tableName + "_" + attributeNames + "Index";
 
         currentAttribute.setIndex(indexName);
+
+        Json.saveDatabases(databases);
+        return "index " + indexName + " created successfully";
     }
 
-    private void deleteDatabase(String databaseName) throws DbExceptions.DataDefinitionException {
+    private String deleteDatabase(String databaseName) throws DbExceptions.DataDefinitionException, IOException, DbExceptions.UnsuccessfulDeleteException {
         //DELETE DATABASE <databasename>
         Database database = databases.stream()
                 .filter(o -> o.getName().equals(databaseName))
@@ -223,8 +220,11 @@ public class CommandProcessor {
         usedDatabase = null;
         mongoDBManager.deleteDatabase(databaseName);
         databases.remove(database);
+
+        Json.saveDatabases(databases);
+        return "database " + databaseName + " deleted successfully";
     }
-    private void deleteTable(String tableName) throws DbExceptions.DataDefinitionException {
+    private String deleteTable(String tableName) throws DbExceptions.DataDefinitionException, IOException, DbExceptions.UnsuccessfulDeleteException {
         //DELETE TABLE <tablename>
         Table table = usedDatabase.getTable(tableName);
         if(table == null){
@@ -236,9 +236,12 @@ public class CommandProcessor {
         }
         mongoDBManager.deleteTable(tableName);
         usedDatabase.removeTable(table);
+
+        Json.saveDatabases(databases);
+        return "table " + tableName + " deleted successfully";
     }
 
-    private void insert(String command) throws DbExceptions.DataManipulationException, DbExceptions.DataDefinitionException {
+    private String insert(String command) throws DbExceptions.DataManipulationException, DbExceptions.DataDefinitionException {
         Pattern insertPattern = Pattern.compile(
                 "INSERT INTO ([a-zA-Z0-9_]+)[ ]?(\\(([^()]+)\\))?VALUES\\(([^()]+)\\)",
                 Pattern.CASE_INSENSITIVE);
@@ -271,7 +274,13 @@ public class CommandProcessor {
         List<String> valuesToInsert = new ArrayList<>();
         List<String> keysToInsert = new ArrayList<>();
 
-        boolean intPK = false;
+        int pkCount = (int) currentTable.getAttributes().stream().filter(Attribute::isPk).count();
+        boolean intPK = (pkCount == 1) &&
+                currentTable.getAttributes().stream()
+                        .filter(Attribute::isPk)
+                        .map(Attribute::getDataType)
+                        .map(dt -> dt.equalsIgnoreCase("int"))
+                        .reduce(true, Boolean::logicalAnd);
 
         for (Attribute attribute : currentTable.getAttributes())
         {
@@ -291,7 +300,6 @@ public class CommandProcessor {
                         throw new DbExceptions.DataManipulationException(
                                 "Integer expected for attribute " + attribute.getName());
                     }
-                    intPK = true;
                 } else {
                     Matcher varcharTypeMatcher = Pattern
                             .compile("VARCHAR\\(([0-9]+)\\)", Pattern.CASE_INSENSITIVE)
@@ -338,23 +346,36 @@ public class CommandProcessor {
                     if (refAttr == null)
                         throw new DbExceptions.DataDefinitionException
                                 ("Non-existent attribute referenced: " + attribute.getRefColumn());
-                    if (mongoDBManager.isUnique(
-                            refTable.getName(), val,
-                            refAttr.isPk() ? "_id" : "value",
-                            refAttr.isPk() ? pkIndex : valueIndex
-                    ))
-                        throw new DbExceptions.DataManipulationException
-                                ("Referencing table does not contains value: " + val);
+                    int refTablePkCount = (int) refTable.getAttributes().stream().filter(Attribute::isPk).count();
+                    if (refTablePkCount == 1 && refAttr.isPk() &&
+                            refAttr.getDataType().equalsIgnoreCase("int")) {
+                        if (mongoDBManager.isUniqueKey(refTable.getName(), val))
+                            throw new DbExceptions.DataManipulationException
+                                    ("Referencing table does not contains value: " + val);
+                    } else {
+                        if (mongoDBManager.isUniqueValue(
+                                refTable.getName(), val,
+                                refAttr.isPk() ? "_id" : "value",
+                                refAttr.isPk() ? pkIndex : valueIndex
+                        ))
+                            throw new DbExceptions.DataManipulationException
+                                    ("Referencing table does not contains value: " + val);
+                    }
                 }
 
                 // unique check
                 if(attribute.isUnique()){
-                    if(!mongoDBManager.isUnique(
-                            currentTable.getName(), val,
-                            attribute.isPk() ? "_id" : "value",
-                            attribute.isPk() ? keysToInsert.size() : valuesToInsert.size())
-                    )
-                        throw new DbExceptions.DataManipulationException("This field must be unique.");
+                    if (intPK && attribute.isPk()) {
+                        if (!mongoDBManager.isUniqueKey(currentTable.getName(), val))
+                            throw new DbExceptions.DataManipulationException("This field must be unique.");
+                    } else {
+                        if (!mongoDBManager.isUniqueValue(
+                                currentTable.getName(), val,
+                                attribute.isPk() ? "_id" : "value",
+                                attribute.isPk() ? keysToInsert.size() : valuesToInsert.size())
+                        )
+                            throw new DbExceptions.DataManipulationException("This field must be unique.");
+                    }
                 }
 
                 // not null check
@@ -373,7 +394,7 @@ public class CommandProcessor {
         String key = String.join("#", keysToInsert);
         String value = String.join("#", valuesToInsert);
 
-        if (keysToInsert.size() == 1 && intPK)
+        if (intPK)
             mongoDBManager.insertIntKey(tableName, Integer.parseInt(key), value);
         else
             mongoDBManager.insert(tableName, key, value);
@@ -397,6 +418,7 @@ public class CommandProcessor {
                     }
                 } else {
                     String val = values.get(i);
+                    val = val.substring(1, val.length()-1);
                     if (attribute.isUnique())
                         mongoDBManager.insert(attribute.getIndex(), val, key);
                     else {
@@ -405,8 +427,10 @@ public class CommandProcessor {
                 }
             }
         }
+
+        return "1 row inserted successfully";
     }
-    private void delete(String command) throws DbExceptions.DataManipulationException {
+    private String delete(String command) throws DbExceptions.DataManipulationException {
         Pattern insertPattern = Pattern.compile(
                 "^DELETE FROM ([a-zA-Z0-9_]+) WHERE (.*)$",
                 Pattern.CASE_INSENSITIVE);
@@ -554,11 +578,13 @@ public class CommandProcessor {
         mongoDBManager.delete(tableName, keysToDelete);
         keysToDeleteFromIndex.forEach(mongoDBManager::delete);
         pksToDeleteAtKeyNotUniqueIndex.forEach(mongoDBManager::deleteFromNotUniqueIndex);
+
+        return keysToDelete.size() + " rows deleted successfully";
     }
 
-    private void select(String command) throws DbExceptions.DataManipulationException {
+    private String select(String command) throws DbExceptions.DataManipulationException {
         Pattern selectPattern = Pattern.compile(
-                "^SELECT (\\*|[a-zA-Z0-9_]+) FROM ([a-zA-Z0-9_]+)(?: WHERE (.+))?$",
+                "^SELECT (\\*|[a-zA-Z0-9_,]+) FROM ([a-zA-Z0-9_]+)(?: WHERE (.+))?$",
                 Pattern.CASE_INSENSITIVE);
         Matcher selectMatcher = selectPattern.matcher(command);
 
@@ -697,8 +723,6 @@ public class CommandProcessor {
             }
         }
 
-
-
         // find documents from main collection filtered by indexes
         FindIterable<Document> documents = mongoDBManager.findFiltered(currentTable.getName(), filter);
         List<List<String>> result = new ArrayList<>();
@@ -722,10 +746,26 @@ public class CommandProcessor {
         }
 
         // projection
-        result.stream().map(row -> String.join(";", row)).forEach(System.out::println);
+        if (!projection.equals("*")) {
+            List<Integer> selectedIndexes = Arrays.stream(projection.split(","))
+                    .map(attributeByName::get)
+                    .map(indexInDocument::get)
+                    .collect(Collectors.toList());
+            result = result.stream()
+                    .map(row -> selectedIndexes.stream()
+                            .map(row::get)
+                            .collect(Collectors.toList()))
+                    .collect(Collectors.toList());
+        } else {
+            projection = currentTable.getAttributes().stream()
+                    .map(Attribute::getName)
+                    .collect(Collectors.joining(","));
+        }
+
+        return toHTMLTable(Arrays.asList(projection.split(",")), result);
     }
 
-    private void use(String databaseName) throws DbExceptions.DataDefinitionException {
+    private String use(String databaseName) throws DbExceptions.DataDefinitionException {
         usedDatabase = databases.stream()
                 .filter(o -> o.getName().equals(databaseName))
                 .findAny().orElse(null);
@@ -733,5 +773,31 @@ public class CommandProcessor {
             throw (new DbExceptions.DataDefinitionException("Database does not exist: " + databaseName));
         }
         mongoDBManager.use(usedDatabase.getName());
+
+        return "Using database " + databaseName;
+    }
+
+    private String toHTMLTable(List<String> header, List<List<String>> data) {
+        StringBuilder table = new StringBuilder();
+        table.append("<table>");
+        table.append("<tr>");
+        header.forEach(th -> {
+            table.append("<th>");
+            table.append(th);
+            table.append("</th>");
+        });
+        table.append("</tr>");
+        data.forEach(tr -> {
+            table.append("<tr>");
+            tr.forEach(td -> {
+                table.append("<td>");
+                table.append(td);
+                table.append("</td>");
+            });
+            table.append("</tr>");
+        });
+        table.append("</table>");
+
+        return table.toString();
     }
 }
