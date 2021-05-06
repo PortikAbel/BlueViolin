@@ -36,30 +36,32 @@ public class Server {
             mainWhile:
             while (true) {
                 msgBuilder = new StringBuilder();
-                while (!(inputLine = in.readLine()).equals("")) {
-                    msgBuilder.append(inputLine);
+                while (!(inputLine = in.readLine()).equals(".")) {
+                    msgBuilder.append(inputLine).append("\n");
                 }
                 msg = msgBuilder.toString();
                 msg = successiveWhitespaces.matcher(msg).replaceAll(" ");
                 msg = delimiterSurroundingSpaces.matcher(msg).replaceAll("$1");
+                msg = msg.replaceAll("\\s*$", "");
 
                 for (String command : msg.split(";")) {
-                    if ("".equals(command))
+                    if (".".equals(command))
                         break;
-                    if (command.equals("exit")) {
+                    if (command.startsWith("exit")) {
                         out.println("bye");
                         break mainWhile;
                     }
                     try {
-                        commandProcessor.processCommand(command);
-                        out.println("OK");
+                        out.println(commandProcessor.processCommand(command));
+                        out.println(".");
                     }
                     catch (DbExceptions.DataDefinitionException |
                             DbExceptions.UnsuccessfulDeleteException |
                             DbExceptions.UnknownCommandException |
                             DbExceptions.DataManipulationException e
                     ) {
-                        out.println(e.getMessage());
+                        out.println("error: " + e.getMessage());
+                        out.println(".");
                     }
                 }
             }

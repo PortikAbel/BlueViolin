@@ -15,8 +15,8 @@ public class Query {
 
     public void run() {
         if (textArea.getSelectedText().equals(""))
-            mainWindow.sendQuery(textArea.getText());
+            mainWindow.send(textArea.getText());
         else
-            mainWindow.sendQuery(textArea.getSelectedText());
+            mainWindow.send(textArea.getSelectedText());
     }
 }

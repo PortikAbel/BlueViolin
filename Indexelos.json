@@ -1,7 +1,7 @@
 {
   "name" : "Indexelos",
   "tables" : [ {
-    "name" : "Int_String_Int",
+    "name" : "T1",
     "attributes" : [ {
       "name" : "A",
       "dataType" : "int",
@@ -10,18 +10,18 @@
       "pk" : true,
       "fk" : false,
       "notNull" : true,
-      "unique" : false,
+      "unique" : true,
       "index" : ""
     }, {
       "name" : "B",
-      "dataType" : "varchar(30)",
+      "dataType" : "varchar(30)NOT",
       "refTable" : null,
       "refColumn" : null,
       "pk" : false,
       "fk" : false,
       "notNull" : false,
       "unique" : false,
-      "index" : ""
+      "index" : "Bindex "
     }, {
       "name" : "C",
       "dataType" : "int",
@@ -29,9 +29,19 @@
       "refColumn" : null,
       "pk" : false,
       "fk" : false,
-      "notNull" : false,
+      "notNull" : true,
       "unique" : false,
       "index" : "Cindex "
+    }, {
+      "name" : "D",
+      "dataType" : "int",
+      "refTable" : null,
+      "refColumn" : null,
+      "pk" : false,
+      "fk" : false,
+      "notNull" : true,
+      "unique" : true,
+      "index" : "Dindex "
     } ]
   } ]
 }

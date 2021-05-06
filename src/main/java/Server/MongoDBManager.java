@@ -94,15 +94,26 @@ public class MongoDBManager {
                         .split("##"))
                         .filter(pk -> !list.contains(pk))
                         .collect(Collectors.joining("##"));
-                collection.findOneAndUpdate(
-                        Filters.eq("_id", key),
-                        set("value", newValue)
-                );
+                if (newValue.equals(""))
+                    collection.deleteOne(Filters.eq("_id", key));
+                else
+                    collection.findOneAndUpdate(
+                            Filters.eq("_id", key),
+                            set("value", newValue));
             }
         });
     }
 
-    public boolean isUnique(String tableName, String value, String key_value, int index){
+    public boolean isUniqueKey(String tableName, Object key){
+        MongoCollection<Document> currentTable = currentDatabase.getCollection(tableName);
+        for (Document document : currentTable.find()) {
+            if(document.get("_id").equals(key))
+                return false;
+        }
+        return true;
+    }
+
+    public boolean isUniqueValue(String tableName, String value, String key_value, int index){
         MongoCollection<Document> currentTable = currentDatabase.getCollection(tableName);
         for (Document document : currentTable.find()) {
             String field = document.getString(key_value);
