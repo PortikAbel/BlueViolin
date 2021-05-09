@@ -31,6 +31,13 @@ public class Table {
         return name;
     }
 
+    public Attribute getAttribute(String attributeName) {
+        return attributes.stream()
+                .filter(o -> o.getName().equals(attributeName))
+                .findFirst()
+                .orElse(null);
+    }
+
     public List<Attribute> getAttributes() {
         return attributes;
     }
