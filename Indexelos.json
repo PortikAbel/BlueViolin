@@ -43,5 +43,28 @@
       "unique" : true,
       "index" : "Dindex "
     } ]
+  }, {
+    "name" : "T2",
+    "attributes" : [ {
+      "name" : "A",
+      "dataType" : "int",
+      "refTable" : null,
+      "refColumn" : null,
+      "pk" : true,
+      "fk" : false,
+      "notNull" : true,
+      "unique" : true,
+      "index" : ""
+    }, {
+      "name" : "D",
+      "dataType" : "int",
+      "refTable" : "T1",
+      "refColumn" : "D",
+      "pk" : false,
+      "fk" : true,
+      "notNull" : true,
+      "unique" : false,
+      "index" : ""
+    } ]
   } ]
 }
