@@ -15,8 +15,11 @@ import java.util.stream.Collectors;
 
 import static Server.Parser.Select.Mongo.findFromTableByFilters;
 import static Server.Parser.Select.AttributeFinder.*;
+import static Server.Parser.Select.TableParser.joinParser;
 import static Server.Parser.Select.ToHTML.toHTMLTable;
-import static Server.Parser.Select.Table.tableParser;
+import static Server.Parser.Select.TableParser.*;
+import static Server.Parser.Select.Condition.conditionParser;
+import static Server.Parser.Select.Joining.joinResults;
 
 public class Select {
     public static String select(String command, Database usedDatabase, MongoDBManager mongoDBManager)
@@ -69,41 +72,7 @@ public class Select {
                 Table joinedTable = tableParser(joinedTableNameMatcher, usedDatabase, tableAS,
                         selectedTables, attributeByNameInTable, indexOfAttribute);
 
-                String tableName1, attributeName1, tableName2, attributeName2;
-                tableName1 = joinedTableMatcher.group(2);
-                attributeName1 = joinedTableMatcher.group(3);
-                tableName2 = joinedTableMatcher.group(4);
-                attributeName2 = joinedTableMatcher.group(5);
-
-                if (tableName1 == null) {
-                    tableName1 = getTableOfAttribute(selectedTables, attributeName1);
-                    if (tableName1 == null)
-                        throw new DbExceptions.DataManipulationException(
-                                "Could not determine to which table attribute belongs: " + attributeName1);
-                }
-                if (tableName2 == null) {
-                    tableName2 = getTableOfAttribute(selectedTables, attributeName2);
-                    if (tableName2 == null)
-                        throw new DbExceptions.DataManipulationException(
-                                "Could not determine to which table attribute belongs: " + attributeName2);
-                }
-
-                Table table1 = tableAS.get(tableName1);
-                if (table1 == null)
-                    throw new DbExceptions.DataManipulationException("Table not exists: " + tableName1);
-                Table table2 = tableAS.get(tableName2);
-                if (table2 == null)
-                    throw new DbExceptions.DataManipulationException("Table not exists: " + tableName2);
-                Attribute attribute1 = table1.getAttribute(attributeName1);
-                if (attribute1 == null)
-                    throw new DbExceptions.DataManipulationException("Attribute not exists: " + attributeName1);
-                Attribute attribute2 = table2.getAttribute(attributeName2);
-                if (attribute2 == null)
-                    throw new DbExceptions.DataManipulationException("Attribute not exists: " + attributeName2);
-                if (!attribute1.isFk() && !attribute2.isFk())
-                    throw new DbExceptions.DataManipulationException("Could not join on non foreign key attributes");
-
-                joinedOn.put(joinedTable, new Pair<>(attribute1, attribute2));
+                joinedOn.put(joinedTable, joinParser(joinedTableMatcher, selectedTables, tableAS));
             }
         }
 
@@ -120,29 +89,9 @@ public class Select {
 
             for (String cond : conditions.split("(?i) AND ")) {
                 Matcher condMatcher = condPattern.matcher(cond);
-                String tableAlias, attributeName, operator, rightOperand;
-                if (condMatcher.find()) {
-                    tableAlias = condMatcher.group(1);
-                    attributeName = condMatcher.group(2);
-                    operator = condMatcher.group(3);
-                    rightOperand = condMatcher.group(4);
-                } else {
+                if (!conditionParser(condMatcher, selectedTables,
+                        filtersOnAttributeInTable, tableAS, attributeByNameInTable))
                     throw new DbExceptions.DataManipulationException("Incorrect where condition: " + cond);
-                }
-                // if containing table was not given to attribute
-                if (tableAlias == null) {
-                    tableAlias = getTableOfAttribute(selectedTables, attributeName);
-                    if (tableAlias == null)
-                        throw new DbExceptions.DataManipulationException(
-                                "Could not determine to which table attribute belongs: " + attributeName);
-                }
-                Filter filter = new Filter(operator, rightOperand);
-                filtersOnAttributeInTable
-                        .get(tableAS.get(tableAlias))
-                        .get(attributeByNameInTable
-                                .get(tableAS.get(tableAlias))
-                                .get(attributeName))
-                        .add(filter);
             }
         }
 
@@ -155,28 +104,8 @@ public class Select {
                         indexOfAttribute)
                 ));
 
-        List<List<String>> result = results.remove(mainTable);
-        for (Table tableToJoin : results.keySet()) {
-            List<List<String>> newResult = new ArrayList<>();
-            List<List<String>> resultToJoin = results.get(tableToJoin);
-            int index1 = indexOfAttribute.get(joinedOn.get(tableToJoin).getKey());
-            int index2 = indexOfAttribute.get(joinedOn.get(tableToJoin).getValue());
-            for (List<String> r1 : result) {
-                for (List<String> r2: resultToJoin) {
-                    if (r1.get(index1).equals(r2.get(index2))) {
-                        List<String> newRow = new ArrayList<>(r1);
-                        newRow.addAll(r2);
-                        newResult.add(newRow);
-                    }
-                }
-            }
-            int prevLength = result.get(0).size();
-            tableToJoin.getAttributes().forEach(
-                    attribute -> indexOfAttribute.put(attribute,
-                            indexOfAttribute.get(attribute) + prevLength)
-            );
-            result = newResult;
-        }
+        // joining tables
+        List<List<String>> result = joinResults(results, mainTable, indexOfAttribute, joinedOn);
 
         // projection
         if (!projection.equals("*")) {
