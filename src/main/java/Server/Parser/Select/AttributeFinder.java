@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class AttributeFinder {
-    public static String getTableOfAttribute(List<Table> selectedTables, String attributeName) {
+    protected static String getTableOfAttribute(List<Table> selectedTables, String attributeName) {
         List<Table> matchingTables = selectedTables.stream()
                 .map(table -> {
                     int matchingAttributesCount = (int) table.getAttributes().stream()
@@ -27,7 +27,7 @@ public class AttributeFinder {
         return matchingTables.get(0).getName();
     }
 
-    public static void indexAttributesInTable(
+    protected static void indexAttributesInTable(
             Table table,
             HashMap < Table, HashMap< String, Attribute >> attributeByNameInTable,
             HashMap< Attribute, Integer > indexInDocument

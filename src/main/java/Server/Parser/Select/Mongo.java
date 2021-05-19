@@ -13,7 +13,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class Mongo {
-    public static List<List<String>> findFromTableByFilters(
+    protected static List<List<String>> findFromTableByFilters(
             Table table, MongoDBManager mongoDBManager,
             HashMap<Attribute, ArrayList<Filter>> filtersOnAttribute,
             HashMap< Attribute, Integer > indexInDocument)

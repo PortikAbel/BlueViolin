@@ -8,18 +8,20 @@ import Server.Filter;
 import Server.MongoDBManager;
 import javafx.util.Pair;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
-import static Server.Parser.Select.Mongo.findFromTableByFilters;
-import static Server.Parser.Select.AttributeFinder.*;
-import static Server.Parser.Select.TableParser.joinParser;
-import static Server.Parser.Select.ToHTML.toHTMLTable;
-import static Server.Parser.Select.TableParser.*;
 import static Server.Parser.Select.Condition.conditionParser;
 import static Server.Parser.Select.Joining.joinResults;
+import static Server.Parser.Select.Mongo.findFromTableByFilters;
+import static Server.Parser.Select.TableParser.joinParser;
+import static Server.Parser.Select.TableParser.tableParser;
+import static Server.Parser.Select.ToHTML.toHTMLTable;
+import static Server.Parser.Select.Projection.*;
 
 public class Select {
     public static String select(String command, Database usedDatabase, MongoDBManager mongoDBManager)
@@ -109,41 +111,9 @@ public class Select {
 
         // projection
         if (!projection.equals("*")) {
-            Pattern taPattern = Pattern.compile(
-                    "(?:([a-zA-Z0-9_]+)\\.)?([a-zA-Z0-9_]+)",
-                    Pattern.CASE_INSENSITIVE);
-            List<Integer> selectedIndexes = Arrays.stream(projection.split(","))
-                    .map(ta -> {
-                        Matcher taMatcher = taPattern.matcher(ta);
-                        if (!taMatcher.find())
-                            return null;
-                        String tableName = taMatcher.group(1);
-                        String attributeName = taMatcher.group(2);
-                        if (tableName == null) {
-                            tableName = getTableOfAttribute(selectedTables, attributeName);
-                            if (tableName == null)
-                                return null;
-                        }
-                        Table table = usedDatabase.getTable(tableName);
-                        if (table == null)
-                            return null;
-                        return table.getAttribute(attributeName);
-                    })
-                    .filter(Objects::nonNull)
-                    .map(indexOfAttribute::get)
-                    .collect(Collectors.toList());
-            result = result.stream()
-                    .map(row -> selectedIndexes.stream()
-                            .map(row::get)
-                            .collect(Collectors.toList()))
-                    .collect(Collectors.toList());
+            result = projectionOnResult(projection, result, selectedTables, usedDatabase, indexOfAttribute);
         } else {
-            projection = selectedTables.stream()
-                    .map(Table::getAttributes)
-                    .map(attributes -> attributes.stream()
-                            .map(Attribute::getName)
-                            .collect(Collectors.joining(",")))
-                    .collect(Collectors.joining(","));
+            projection = projectionAllOnTables(selectedTables);
         }
 
         return toHTMLTable(Arrays.asList(projection.split(",")), result);

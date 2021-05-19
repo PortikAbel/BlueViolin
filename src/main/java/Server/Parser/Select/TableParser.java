@@ -14,7 +14,7 @@ import static Server.Parser.Select.AttributeFinder.getTableOfAttribute;
 import static Server.Parser.Select.AttributeFinder.indexAttributesInTable;
 
 public class TableParser {
-    public static Table tableParser(Matcher tableMather,
+    protected static Table tableParser(Matcher tableMather,
                                    Database usedDatabase,
                                    HashMap<String, Table> tableAS,
                                    ArrayList<Table> selectedTables,
@@ -38,7 +38,7 @@ public class TableParser {
         return table;
     }
 
-    public static Pair<Attribute, Attribute> joinParser(Matcher joinedTableMatcher,
+    protected static Pair<Attribute, Attribute> joinParser(Matcher joinedTableMatcher,
                                                         ArrayList<Table> selectedTables,
                                                         HashMap<String, Table> tableAS)
             throws DbExceptions.DataManipulationException
