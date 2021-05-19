@@ -15,7 +15,7 @@ public class InsertClient {
 
     public InsertClient() {
         try {
-            Socket clientSocket = new Socket("Localhost", 4242);
+            Socket clientSocket = new Socket("localhost", 4242);
             serverToClientReader = new BufferedReader(
                     new InputStreamReader(
                             clientSocket.getInputStream()
@@ -31,30 +31,30 @@ public class InsertClient {
 
     private String send(String msg) {
         clientToServerWriter.println(msg);
-        clientToServerWriter.println("");
-        String resp;
+        clientToServerWriter.println(".");
+        StringBuilder respBuilder = new StringBuilder();
+        String inputLine;
         try {
-            resp = serverToClientReader.readLine();
+            while (!(inputLine = serverToClientReader.readLine()).equals(".")) {
+                respBuilder.append(inputLine).append("\n");
+            }
         } catch (IOException e) {
-            resp = "";
+            return "";
         }
-        return resp;
+        return respBuilder.toString();
     }
 
     public void insertData(String dbName, String tableName, int[] maxInt, int rowCount) {
-        if (!"OK".equals(send("USE "+dbName)))
-            return;
+        System.out.println((send("USE "+dbName)));
         Random random = new Random();
-        String resp;
         for (int i = 0; i < rowCount; i++) {
-            resp = send(String.format("INSERT INTO %s VALUES(%s);",
+            send(String.format("INSERT INTO %s VALUES(%s);",
                     tableName,
                     i + "," + Arrays.stream(maxInt)
                         .map(random::nextInt)
                         .mapToObj(Integer::toString)
                         .collect(Collectors.joining(","))
             ));
-            System.out.println(resp);
         }
     }
 
