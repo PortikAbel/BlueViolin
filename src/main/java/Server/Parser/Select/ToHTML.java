@@ -3,7 +3,7 @@ package Server.Parser.Select;
 import java.util.List;
 
 public class ToHTML {
-    public static String toHTMLTable(List<String> header, List<List<String>> data) {
+    protected static String toHTMLTable(List<String> header, List<List<String>> data) {
         StringBuilder table = new StringBuilder();
         table.append("<table>");
         table.append("<tr>");

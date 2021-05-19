@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public class Joining {
-    public static List<List<String>> joinResults(HashMap<Table, List<List<String>>> results,
+    protected static List<List<String>> joinResults(HashMap<Table, List<List<String>>> results,
                                                  Table mainTable,
                                                  HashMap<Attribute, Integer > indexOfAttribute,
                                                  HashMap< Table, Pair<Attribute, Attribute>> joinedOn)

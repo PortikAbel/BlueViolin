@@ -12,7 +12,7 @@ import java.util.regex.Matcher;
 import static Server.Parser.Select.AttributeFinder.getTableOfAttribute;
 
 public class Condition {
-    public static boolean conditionParser(
+    protected static boolean conditionParser(
             Matcher condMatcher,
             ArrayList<Table> selectedTables,
             HashMap< Table, HashMap<Attribute, ArrayList<Filter> >> filtersOnAttributeInTable,
