@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 
-import static Server.Parser.Select.AttributeFinder.getTableOfAttribute;
+import static Server.Parser.Select.TableParser.getTableOfAttribute;
 
 public class Condition {
     protected static boolean conditionParser(

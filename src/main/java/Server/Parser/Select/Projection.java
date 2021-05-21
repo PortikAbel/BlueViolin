@@ -1,7 +1,7 @@
 package Server.Parser.Select;
 
 import Server.DbStructure.Attribute;
-import Server.DbStructure.Database;
+import Server.DbStructure.DbExceptions;
 import Server.DbStructure.Table;
 
 import java.util.*;
@@ -9,39 +9,54 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static Server.Parser.Select.AttributeFinder.getTableOfAttribute;
+import static Server.Parser.Select.TableParser.attributeParser;
 
 public class Projection {
-    protected static List<List<String>> projectionOnResult(
+    private static final Pattern aggPattern = Pattern.compile(
+            "^(?:(COUNT|MIN|MAX|SUM|AVG)\\()?([A-Z0-9._]+)\\)?$",
+            Pattern.CASE_INSENSITIVE);
+
+    protected static List<Attribute> parseProjection(
             String projection,
-            List<List<String>> result,
             ArrayList<Table> selectedTables,
-            Database usedDatabase,
-            HashMap<Attribute, Integer > indexOfAttribute)
+            HashMap<String, Table> tableAS,
+            HashMap<Attribute, String> aggregationOfAttribute)
     {
-        Pattern taPattern = Pattern.compile(
-                "(?:([a-zA-Z0-9_]+)\\.)?([a-zA-Z0-9_]+)",
-                Pattern.CASE_INSENSITIVE);
-        List<Integer> selectedIndexes = Arrays.stream(projection.split(","))
-                .map(ta -> {
-                    Matcher taMatcher = taPattern.matcher(ta);
-                    if (!taMatcher.find())
-                        return null;
-                    String tableName = taMatcher.group(1);
-                    String attributeName = taMatcher.group(2);
-                    if (tableName == null) {
-                        tableName = getTableOfAttribute(selectedTables, attributeName);
-                        if (tableName == null)
-                            return null;
+        return Arrays.stream(projection.split(","))
+                .map(column -> {
+                    Matcher aggMatcher = aggPattern.matcher(column);
+                    String attributeName, aggregation = null;
+                    if (aggMatcher.find()) {
+                        aggregation = aggMatcher.group(1);
+                        attributeName = aggMatcher.group(2);
+                    } else {
+                        attributeName = column;
                     }
-                    Table table = usedDatabase.getTable(tableName);
-                    if (table == null)
+                    try {
+                        Attribute attribute = attributeParser(attributeName, selectedTables, tableAS);
+                        if (aggregation != null) {
+                            aggregationOfAttribute.put(attribute, aggregation);
+                        }
+                        return attribute;
+                    } catch (DbExceptions.DataManipulationException e) {
                         return null;
-                    return table.getAttribute(attributeName);
+                    }
                 })
                 .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    protected static List<List<String>> projectionOnResult(
+            List<List<String>> result,
+            List<Attribute> selectedAttributes,
+            HashMap<Attribute, Integer> indexOfAttribute)
+    {
+        List<Integer> selectedIndexes = selectedAttributes.stream()
                 .map(indexOfAttribute::get)
                 .collect(Collectors.toList());
+
+        indexOfAttribute.entrySet().removeIf(keyValue -> !selectedAttributes.contains(keyValue.getKey()));
+
         return result.stream()
                 .map(row -> selectedIndexes.stream()
                         .map(row::get)
@@ -56,5 +71,27 @@ public class Projection {
                         .map(Attribute::getName)
                         .collect(Collectors.joining(",")))
                 .collect(Collectors.joining(","));
+    }
+
+    protected static void checkProjection(
+            List<Attribute> selectedAttributes,
+            List<Attribute> groupByAttributes,
+            HashMap<Attribute, String> aggregation) throws DbExceptions.DataManipulationException
+    {
+        for (Attribute selectedAttribute : selectedAttributes) {
+            if (aggregation.containsKey(selectedAttribute)) {
+                if (groupByAttributes != null && groupByAttributes.contains(selectedAttribute))
+                    throw new DbExceptions.DataManipulationException(
+                            "Aggregation on group by column");
+                if (!aggregation.get(selectedAttribute).equalsIgnoreCase("COUNT")
+                        && !selectedAttribute.getDataType().equalsIgnoreCase("INT"))
+                    throw new DbExceptions.DataManipulationException(
+                            "Incompatible aggregation on column type " + selectedAttribute.getDataType());
+            } else {
+                if (groupByAttributes == null || !groupByAttributes.contains(selectedAttribute))
+                    throw new DbExceptions.DataManipulationException(
+                            "Non group-by column was not aggregated.");
+            }
+        }
     }
 }
