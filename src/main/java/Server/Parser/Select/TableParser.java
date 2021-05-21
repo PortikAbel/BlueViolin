@@ -8,29 +8,36 @@ import javafx.util.Pair;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
-
-import static Server.Parser.Select.AttributeFinder.getTableOfAttribute;
-import static Server.Parser.Select.AttributeFinder.indexAttributesInTable;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class TableParser {
-    protected static Table tableParser(Matcher tableMather,
+    private final static Pattern tableAliasPattern = Pattern.compile(
+            "^([a-zA-Z0-9_]+)(?: (?:AS )?([a-zA-Z0-9_]))?$",
+            Pattern.CASE_INSENSITIVE);
+    private final static Pattern attributePattern = Pattern.compile(
+            "^(?:([a-zA-Z0-9_]+)\\.)?([a-zA-Z0-9_]+)$");
+
+    protected static Table tableParser(String tableName,
                                    Database usedDatabase,
                                    HashMap<String, Table> tableAS,
                                    ArrayList<Table> selectedTables,
                                    HashMap<Table, HashMap< String, Attribute> > attributeByNameInTable,
                                    HashMap< Attribute, Integer > indexOfAttribute)
-            throws DbExceptions.DataManipulationException
-    {
-        if (!tableMather.find())
+            throws DbExceptions.DataManipulationException {
+        Matcher tableMatcher = tableAliasPattern.matcher(tableName);
+        if (!tableMatcher.find())
             throw new DbExceptions.DataManipulationException("Incorrect SELECT syntax");
-        Table table = usedDatabase.getTable(tableMather.group(1));
+        Table table = usedDatabase.getTable(tableMatcher.group(1));
         if(table == null)
             throw new DbExceptions.DataManipulationException(
-                    "Can't select from non-existent table: " + tableMather.group(1));
-        tableAS.put(tableMather.group(1), table);
-        if (tableMather.group(2) != null)
-            tableAS.put(tableMather.group(2), table);
+                    "Can't select from non-existent table: " + tableMatcher.group(1));
+        tableAS.put(tableMatcher.group(1), table);
+        if (tableMatcher.group(2) != null)
+            tableAS.put(tableMatcher.group(2), table);
         selectedTables.add(table);
 
         indexAttributesInTable(table, attributeByNameInTable, indexOfAttribute);
@@ -38,45 +45,81 @@ public class TableParser {
         return table;
     }
 
-    protected static Pair<Attribute, Attribute> joinParser(Matcher joinedTableMatcher,
-                                                        ArrayList<Table> selectedTables,
-                                                        HashMap<String, Table> tableAS)
-            throws DbExceptions.DataManipulationException
-    {
-        String tableName1, attributeName1, tableName2, attributeName2;
-        tableName1 = joinedTableMatcher.group(2);
-        attributeName1 = joinedTableMatcher.group(3);
-        tableName2 = joinedTableMatcher.group(4);
-        attributeName2 = joinedTableMatcher.group(5);
-
-        if (tableName1 == null) {
-            tableName1 = getTableOfAttribute(selectedTables, attributeName1);
-            if (tableName1 == null)
-                throw new DbExceptions.DataManipulationException(
-                        "Could not determine to which table attribute belongs: " + attributeName1);
+    protected static Attribute attributeParser(String tableAttribute,
+                                               ArrayList<Table> selectedTables,
+                                               HashMap<String, Table> tableAS)
+            throws DbExceptions.DataManipulationException {
+        Matcher tableAttributeMatcher = attributePattern.matcher(tableAttribute);
+        if (!tableAttributeMatcher.find()) {
+            throw new DbExceptions.DataManipulationException("Incorrect attribute syntax:" + tableAttribute);
         }
-        if (tableName2 == null) {
-            tableName2 = getTableOfAttribute(selectedTables, attributeName2);
-            if (tableName2 == null)
+        String tableName = tableAttributeMatcher.group(1);
+        String attributeName = tableAttributeMatcher.group(2);
+        if (tableName == null) {
+            tableName = getTableOfAttribute(selectedTables, attributeName);
+            if (tableName == null)
                 throw new DbExceptions.DataManipulationException(
-                        "Could not determine to which table attribute belongs: " + attributeName2);
+                        "Could not determine to which table attribute belongs: " + attributeName);
         }
 
-        Table table1 = tableAS.get(tableName1);
+        Table table1 = tableAS.get(tableName);
         if (table1 == null)
-            throw new DbExceptions.DataManipulationException("Table not exists: " + tableName1);
-        Table table2 = tableAS.get(tableName2);
-        if (table2 == null)
-            throw new DbExceptions.DataManipulationException("Table not exists: " + tableName2);
-        Attribute attribute1 = table1.getAttribute(attributeName1);
+            throw new DbExceptions.DataManipulationException("Table not exists: " + tableName);
+        return table1.getAttribute(attributeName);
+    }
+
+    protected static Pair<Attribute, Attribute> joinParser(Matcher joinedTableMatcher,
+                                                           ArrayList<Table> selectedTables,
+                                                           HashMap<String, Table> tableAS)
+            throws DbExceptions.DataManipulationException {
+        String tableAttribute1, tableAttribute2;
+        tableAttribute1 = joinedTableMatcher.group(2);
+        tableAttribute2 = joinedTableMatcher.group(3);
+
+        Attribute attribute1 = attributeParser(tableAttribute1, selectedTables, tableAS);
+        Attribute attribute2 = attributeParser(tableAttribute2, selectedTables, tableAS);
         if (attribute1 == null)
-            throw new DbExceptions.DataManipulationException("Attribute not exists: " + attributeName1);
-        Attribute attribute2 = table2.getAttribute(attributeName2);
+            throw new DbExceptions.DataManipulationException("Attribute not exists: " + tableAttribute1);
         if (attribute2 == null)
-            throw new DbExceptions.DataManipulationException("Attribute not exists: " + attributeName2);
+            throw new DbExceptions.DataManipulationException("Attribute not exists: " + tableAttribute2);
         if (!attribute1.isFk() && !attribute2.isFk())
             throw new DbExceptions.DataManipulationException("Could not join on non foreign key attributes");
 
         return new Pair<>(attribute1, attribute2);
+    }
+
+    protected static String getTableOfAttribute(List<Table> selectedTables, String attributeName) {
+        List<Table> matchingTables = selectedTables.stream()
+                .map(table -> {
+                    int matchingAttributesCount = (int) table.getAttributes().stream()
+                            .map(Attribute::getName)
+                            .filter(name -> name.equalsIgnoreCase(attributeName))
+                            .count();
+                    if (matchingAttributesCount < 1)
+                        return null;
+                    return table;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        if (matchingTables.size() > 1)
+            return null;
+        return matchingTables.get(0).getName();
+    }
+
+    protected static void indexAttributesInTable(Table table,
+                                                 HashMap < Table, HashMap< String, Attribute >> attributeByNameInTable,
+                                                 HashMap< Attribute, Integer > indexInDocument) {
+        HashMap< String, Attribute > attributeByName = new HashMap<>();
+        int pkCount = (int) table.getAttributes().stream().filter(Attribute::isPk).count();
+        int pkIndex = 0, valueIndex = 0;
+        for (Attribute attribute : table.getAttributes()) {
+            attributeByName.put(attribute.getName(), attribute);
+            if (attribute.isPk())
+                indexInDocument.put(attribute, pkIndex++);
+            else
+                indexInDocument.put(attribute, pkCount + valueIndex++);
+        }
+
+        attributeByNameInTable.put(table, attributeByName);
     }
 }
