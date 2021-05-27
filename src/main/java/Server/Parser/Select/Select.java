@@ -27,8 +27,8 @@ import static Server.Parser.Select.Projection.*;
 public class Select {
     private final static Pattern selectPattern = Pattern.compile(
             "^SELECT (\\*|[a-zA-Z0-9_,.()]+)" +
-                    " ?FROM ([a-zA-Z0-9_]+(?: (?:AS )?[a-zA-Z0-9_])?)" +
-                    "((?: JOIN [a-zA-Z0-9_]+(?: (?:AS )?[a-zA-Z0-9_])?" +
+                    " ?FROM ([a-zA-Z0-9_]+(?: (?:AS )?[a-zA-Z0-9_]+)?)" +
+                    "((?: JOIN [a-zA-Z0-9_]+(?: (?:AS )?[a-zA-Z0-9_]+)?" +
                     " ON [a-zA-Z0-9_.]+=[a-zA-Z0-9_.]+)+)?" +
                     "(?: WHERE (.+))?" +
                     "(?: GROUP BY (.+))?$",
@@ -102,7 +102,7 @@ public class Select {
             groupByAttributes = Arrays.stream(groupBy.split(","))
                     .map(attribute -> {
                         try {
-                            return attributeParser(attribute, selectedTables, tableAS);
+                            return attributeParser(attribute, selectedTables, tableAS).getValue();
                         } catch (DbExceptions.DataManipulationException e) {
                             return null;
                         }
@@ -140,12 +140,11 @@ public class Select {
         // projection
         if (!projection.equals("*")) {
             result = projectionOnResult(result, selectedAttributes, indexOfAttribute);
+            // process aggregations
+            aggregateColumns(result, selectedAttributes, aggregation);
         } else {
             projection = projectionAllOnTables(selectedTables);
         }
-
-        // process aggregations
-        aggregateColumns(result, selectedAttributes, aggregation);
 
         return toHTMLTable(Arrays.asList(projection.split(",")), result);
     }
