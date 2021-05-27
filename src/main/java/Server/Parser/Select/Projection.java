@@ -33,7 +33,7 @@ public class Projection {
                         attributeName = column;
                     }
                     try {
-                        Attribute attribute = attributeParser(attributeName, selectedTables, tableAS);
+                        Attribute attribute = attributeParser(attributeName, selectedTables, tableAS).getValue();
                         if (aggregation != null) {
                             aggregationOfAttribute.put(attribute, aggregation);
                         }
@@ -66,10 +66,13 @@ public class Projection {
 
     protected static String projectionAllOnTables(ArrayList<Table> selectedTables) {
         return selectedTables.stream()
-                .map(Table::getAttributes)
-                .map(attributes -> attributes.stream()
-                        .map(Attribute::getName)
-                        .collect(Collectors.joining(",")))
+                .map(table -> {
+                    String tableName = table.getName();
+                    return table.getAttributes().stream()
+                            .map(Attribute::getName)
+                            .map(attributeName -> tableName + "." + attributeName)
+                            .collect(Collectors.joining(","));
+                })
                 .collect(Collectors.joining(","));
     }
 

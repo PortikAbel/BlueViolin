@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 public class TableParser {
     private final static Pattern tableAliasPattern = Pattern.compile(
-            "^([a-zA-Z0-9_]+)(?: (?:AS )?([a-zA-Z0-9_]))?$",
+            "^([a-zA-Z0-9_]+)(?: (?:AS )?([a-zA-Z0-9_]+))?$",
             Pattern.CASE_INSENSITIVE);
     private final static Pattern attributePattern = Pattern.compile(
             "^(?:([a-zA-Z0-9_]+)\\.)?([a-zA-Z0-9_]+)$");
@@ -45,7 +45,7 @@ public class TableParser {
         return table;
     }
 
-    protected static Attribute attributeParser(String tableAttribute,
+    protected static Pair<Table, Attribute> attributeParser(String tableAttribute,
                                                ArrayList<Table> selectedTables,
                                                HashMap<String, Table> tableAS)
             throws DbExceptions.DataManipulationException {
@@ -65,7 +65,7 @@ public class TableParser {
         Table table1 = tableAS.get(tableName);
         if (table1 == null)
             throw new DbExceptions.DataManipulationException("Table not exists: " + tableName);
-        return table1.getAttribute(attributeName);
+        return new Pair<>(table1, table1.getAttribute(attributeName));
     }
 
     protected static Pair<Attribute, Attribute> joinParser(Matcher joinedTableMatcher,
@@ -76,14 +76,21 @@ public class TableParser {
         tableAttribute1 = joinedTableMatcher.group(2);
         tableAttribute2 = joinedTableMatcher.group(3);
 
-        Attribute attribute1 = attributeParser(tableAttribute1, selectedTables, tableAS);
-        Attribute attribute2 = attributeParser(tableAttribute2, selectedTables, tableAS);
-        if (attribute1 == null)
-            throw new DbExceptions.DataManipulationException("Attribute not exists: " + tableAttribute1);
-        if (attribute2 == null)
-            throw new DbExceptions.DataManipulationException("Attribute not exists: " + tableAttribute2);
+        Pair<Table, Attribute> tableAttributePair1 = attributeParser(tableAttribute1, selectedTables, tableAS);
+        Pair<Table, Attribute> tableAttributePair2 = attributeParser(tableAttribute2, selectedTables, tableAS);
+
+        Attribute attribute1 = tableAttributePair1.getValue();
+        Attribute attribute2 = tableAttributePair2.getValue();
+        Table table1 = tableAttributePair1.getKey();
+        Table table2 = tableAttributePair2.getKey();
         if (!attribute1.isFk() && !attribute2.isFk())
             throw new DbExceptions.DataManipulationException("Could not join on non foreign key attributes");
+
+        if (selectedTables.indexOf(table1) > selectedTables.indexOf(table2)) {
+            Attribute temp = attribute1;
+            attribute1 = attribute2;
+            attribute2 = temp;
+        }
 
         return new Pair<>(attribute1, attribute2);
     }
